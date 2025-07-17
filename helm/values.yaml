@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: ramessesii/forecasting-agent
+  repository: ghcr.io/ramessesii2/finops-agent
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"

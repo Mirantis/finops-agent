@@ -38,15 +38,20 @@ def _start_forecast_server(host: str, port: int):
     class _Handler(BaseHTTPRequestHandler):
         def _send_json(self, data, status=200):
             body = json.dumps(data).encode()
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            # Add CORS headers for API access
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                # Add CORS headers for API access
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers", "Content-Type")
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                logger.warning("Connection to client lost while sending response")
+            except Exception as exc:
+                logger.error(f"Failed to send HTTP response: {exc}")
         
         def _handle_model_endpoint(self):
             """Handle /model endpoint requests following TDD test specifications."""

@@ -1,10 +1,3 @@
-"""
-Simple unit tests for PrometheusCollector.
-
-Tests basic functionality: metric retrieval for 5 days with different step sizes.
-Keeps it simple and focused on core behavior.
-"""
-
 import pytest
 from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
@@ -118,7 +111,7 @@ class TestPrometheusCollectorBasic:
             assert call_args['step'] == '1m'
     
     def test_should_use_chunking_for_5_day_range(self, mock_prometheus_data, time_range_5_days):
-        """Test that 5-day range uses chunked queries (> 2 day threshold)."""
+        """Test that 5-day range uses chunked queries"""
         config = {
             'url': 'http://localhost:9090', 
             'step': '1h',
