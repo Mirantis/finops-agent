@@ -1697,8 +1697,8 @@
     ]
   },
   "time": {
-    "from": "now",
-    "to": "now+7d"
+    "from": "{{ .Values.grafana.dashboard.defaultTime.from }}",
+    "to": "{{ .Values.grafana.dashboard.defaultTime.to }}"
   },
   "timepicker": {},
   "timezone": "browser",

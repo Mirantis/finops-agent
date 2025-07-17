@@ -42,13 +42,12 @@ class PrometheusCollector:
         duration_days = duration.total_seconds() / (24 * 3600)
         
         if duration_days > self.chunk_threshold_days:
-            logger.info(f"Large time range detected ({duration_days:.1f} days), using chunked queries")
             return self._execute_chunked_query(promql, start, end)
         else:
             return self._execute_single_query(promql, start, end)
     
     def _get_step_size(self) -> str:
-        """Get step size from configuration - no adaptive complexity."""
+        """Get step size from configuration."""
         return self.config.get('step', '1h')
     
     def _execute_single_query(self, promql: str, start: datetime, end: datetime):
@@ -57,7 +56,6 @@ class PrometheusCollector:
         
         for attempt in range(self.max_retries):
             try:
-                logger.debug(f"Query attempt {attempt + 1}/{self.max_retries}: {promql}")
                 result = self.prom.custom_query_range(
                     query=promql,
                     start_time=start,
@@ -79,7 +77,7 @@ class PrometheusCollector:
                     raise
     
     def _execute_chunked_query(self, promql: str, start: datetime, end: datetime):
-        """Execute query in chunks for large time ranges - robust handling for big datasets."""
+        """Execute query in chunks for large time range."""
         chunk_size = timedelta(days=self.chunk_threshold_days)
         all_results = []
         current_start = start
@@ -89,13 +87,10 @@ class PrometheusCollector:
             chunk_count += 1
             current_end = min(current_start + chunk_size, end)
             
-            logger.info(f"Processing chunk {chunk_count}: {current_start} to {current_end}")
-            
             try:
                 chunk_result = self._execute_single_query(promql, current_start, current_end)
                 if chunk_result:
                     all_results.extend(chunk_result)
-                    logger.debug(f"Chunk {chunk_count} returned {len(chunk_result)} series")
                 
             except Exception as e:
                 logger.error(f"Chunk {chunk_count} failed: {str(e)}")
@@ -104,7 +99,7 @@ class PrometheusCollector:
             
             current_start = current_end
         
-        logger.info(f"Chunked query completed: {chunk_count} chunks, {len(all_results)} total series")
+        logger.debug(f"Chunked query completed: {chunk_count} chunks, {len(all_results)} total series")
         return all_results
 
     def collect_metrics_timeseries(self, start_time: datetime, end_time: datetime, promq: Dict[str, str]) -> Dict[str, list]:

@@ -9,6 +9,6 @@ metadata:
 data:
 {{- range $path, $_ := .Files.Glob "files/dashboards/**" }}
   {{ base $path }}: |
-{{ $.Files.Get $path | indent 4 }}
+{{ tpl ($.Files.Get $path) $ | indent 4 }}
 {{- end }}
 {{- end }}

@@ -67,7 +67,7 @@ config:
   # Model configuration
   models:
     type: toto
-    forecast_horizon: 7 # number of days ahead in future
+    forecast_horizon: 10 # number of days ahead in future
     quantiles: [0.1, 0.5, 0.9]
     toto:
       checkpoint: Datadog/Toto-Open-Base-1.0
@@ -120,6 +120,9 @@ grafana:
     
   # Dashboard configuration
   dashboard:
+    defaultTime:
+      from: now
+      to: now+10d
     # Variables for the dashboard
     variables:
       cluster:

@@ -42,10 +42,7 @@ def _start_forecast_server(host: str, port: int):
                 self.send_response(status)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(body)))
-                # Add CORS headers for API access
                 self.send_header("Access-Control-Allow-Origin", "*")
-                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                self.send_header("Access-Control-Allow-Headers", "Content-Type")
                 self.end_headers()
                 self.wfile.write(body)
             except (BrokenPipeError, ConnectionResetError):
@@ -54,11 +51,7 @@ def _start_forecast_server(host: str, port: int):
                 logger.error(f"Failed to send HTTP response: {exc}")
         
         def _handle_model_endpoint(self):
-            """Handle /model endpoint requests following TDD test specifications."""
-            from datetime import datetime
-            
             try:
-                # Check if validation results exist
                 validation_results = exported_forecasts.get('_validation_results')
                 
                 if not validation_results:
@@ -69,7 +62,6 @@ def _start_forecast_server(host: str, port: int):
                     })
                     return
                 
-                # Check if validation results are properly formatted
                 if not isinstance(validation_results, dict):
                     self._send_json({
                         "status": "error",
@@ -78,10 +70,8 @@ def _start_forecast_server(host: str, port: int):
                     })
                     return
                 
-                # Calculate summary statistics
                 summary = self._calculate_validation_summary(validation_results)
                 
-                # Return comprehensive validation response
                 self._send_json({
                     "status": "success",
                     "timestamp": datetime.now().isoformat(),
@@ -102,7 +92,6 @@ def _start_forecast_server(host: str, port: int):
                 }, status=500)
         
         def _calculate_validation_summary(self, validation_results):
-            """Calculate summary statistics for validation results."""
             cluster_count = len(validation_results)
             clusters_with_errors = 0
             total_metrics = 0
@@ -131,7 +120,6 @@ def _start_forecast_server(host: str, port: int):
 
         def do_GET(self):
             if self.path == "/clusters" or self.path == "/clusters/":
-                # List all available clusters
                 cluster_list = list(active_clusters)
                 self._send_json({
                     "clusters": cluster_list,
@@ -171,7 +159,6 @@ def _start_forecast_server(host: str, port: int):
                 })
 
         def log_message(self, *args, **kwargs):
-            # Silence default HTTP server logging
             return
 
     server = ThreadingHTTPServer((host, port), _Handler)
@@ -180,7 +167,6 @@ def _start_forecast_server(host: str, port: int):
     logger.info(f"Forecast HTTP server running on {host}:{port}")
 
 class ForecastingAgent:
-    """Main forecasting agent class."""
     def __init__(self, config_path: str):
         self.config = self._load_config(config_path)
         self.collector = self._init_collector()
@@ -251,7 +237,7 @@ class ForecastingAgent:
     def generate_forecast_TOTO(self, raw_results: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
         """Generate TOTO forecast for all clusters
         - PrometheusToTotoAdapter: converts raw JSON to MaskedTimeseries tensors
-        - TOTOAdapter.forecast(): pure forecasting logic only
+        - TOTOAdapter.forecast(): forecasting logic
         - ForecastFormatConverter: transforms TOTO output to cluster-grouped format
         
         Args:
@@ -335,14 +321,14 @@ class ForecastingAgent:
                 
                 toto_forecast = toto_adapter.forecast(
                     series=masked_timeseries,
-                    horizon=future_steps,  # Use calculated timesteps instead of raw days
+                    horizon=future_steps,
                     quantiles=quantiles,
                     variate_metadata=cluster_info['variate_metadata']
                 )
                 
                 cluster_toto_forecasts[cluster_name] = toto_forecast
             
-            # Step 4: Transform TOTO output to cluster-grouped format
+            # Transform TOTO output to cluster-grouped format
             format_converter = ForecastFormatConverter()
             cluster_grouped_results = {}
             
@@ -557,8 +543,6 @@ class ForecastingAgent:
                 
                 api_url = f"http://{api_host}:{api_port}/metrics/{{clustername}}"
                 logger.info(f"Forecast metrics updated and available at {api_url}")
-                # To plot all forecasts, uncomment the following line:
-                # plot_all_forecasts(cluster_timeseries, exported_forecasts)
                 
                 cycle_count += 1
                 logger.info(f"Waiting {self.config['agent']['interval']}s before next collection...")
@@ -572,7 +556,6 @@ class ForecastingAgent:
                 time.sleep(60)
 
 def main():
-    """Main entry point."""
     import argparse
     
     parser = argparse.ArgumentParser(description='Forecasting Agent')
