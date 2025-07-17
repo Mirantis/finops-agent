@@ -2,12 +2,15 @@
 
 FinOps forecasting agent that ingests Kubernetes cost/utilization metrics from Prometheus and generates forecasts using Datadog's TOTO zero-shot model. 
 
-> Currently in development - K8s deployment files work as-is, just build Docker image, push, and apply deployment.
+> Currently in development
+
+> Helm & K8s deployment files work as-is, just build Docker image, push, and apply deployment. 
+
+> The default value of Helm chart also includes a public image of finops-agent in ghcr and so optionally you can skip docker build & push.
 
 **Note**: 
-- Validation & Optimizers are broken at the moment.
+- Optimizers are broken at the moment.
 - NBEATS adapter specific code will be removed completely.
-- A versatile Grafana dashboard will be shipped with k0rdent Service Catalog. For now, there are few screenshots from the built `Grafana dashboard` in `/docs`.
 
 ## Architecture
 
@@ -54,7 +57,10 @@ The `toto/` folder contains utility code directly from upstream [Datadog/Toto](h
 ## Quick Start
 #### Prerequisites
 
-- Access to a Prometheus instance or Prometheus compatible endpoint for fetching metrics.
+- Access to a Prometheus instance **or** any Prometheus-compatible HTTP endpoint.  
+  This can be:
+  - A direct Prometheus server (`http://prometheus:9090`) running inside your cluster.
+  - The “KOF” proxy that exposes a Prometheus-style API.
 
 ### Docker Deployment
 

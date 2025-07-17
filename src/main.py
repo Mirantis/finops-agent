@@ -18,6 +18,7 @@ from adapters.forecasting.toto_adapter import TOTOAdapter
 from adapters.prometheus_toto_adapter import PrometheusToTotoAdapter
 from adapters.prometheus_timeseries_adapter import PrometheusTimeseriesAdapter
 from adapters.forecast_format_converter import ForecastFormatConverter
+from validation.forecast_validator import ForecastValidator
 from metrics.metric_types import MetricTypeClassifier, MetricAggregationLevel
 from metrics.promql_queries import get_all_queries
 
@@ -134,7 +135,7 @@ def _start_forecast_server(host: str, port: int):
                     "total_forecast_entries": sum(len(forecasts) if isinstance(forecasts, list) else 1 
                                                  for forecasts in cluster_metrics.values())
                 })
-            elif self.path == "/model" or self.path == "/model/":
+            elif self.path in ("/models", "/models/"):
                 # Return validation results and model information
                 self._handle_model_endpoint()
             elif self.path.startswith("/metrics/"):
@@ -153,7 +154,8 @@ def _start_forecast_server(host: str, port: int):
                     "endpoints": {
                         "/clusters": "List all available clusters",
                         "/metrics": "Get all metrics from all clusters",
-                        "/metrics/{clusterName}": "Get forecasts for specific cluster"
+                        "/metrics/{clusterName}": "Get forecasts for specific cluster",
+                        "/models": "Validation results"
                     },
                     "active_clusters": len(active_clusters)
                 })
@@ -409,9 +411,6 @@ class ForecastingAgent:
         Raises:
             ValueError: If no valid data is available for validation
         """
-        from validation import ForecastValidator
-        from adapters.forecasting.toto_adapter import TOTOAdapter
-        from adapters.prometheus_toto_adapter import PrometheusToTotoAdapter
         
         try:
             # Collect raw data if not provided
@@ -436,41 +435,14 @@ class ForecastingAgent:
                 raise ValueError("No clusters found in Prometheus data")
             
             logger.info(f"Starting validation with TOTO model for {len(cluster_names)} clusters...")
-            
-            # Convert raw data directly to TOTO format for each cluster
-            cluster_toto_data = {}
-            for cluster_name in cluster_names:
-                try:
-                    # Convert directly to TOTO format - no inefficient TimeSeries conversion
-                    adapter_result = prometheus_adapter.convert_to_toto_format(raw_prometheus_data, cluster_name)
-                    
-                    # Extract MaskedTimeseries from adapter response (adapter returns dict with metadata)
-                    if isinstance(adapter_result, dict) and 'masked_timeseries' in adapter_result:
-                        toto_data = adapter_result['masked_timeseries']
-                        cluster_toto_data[cluster_name] = toto_data
-                        logger.debug(f"Successfully converted cluster {cluster_name} to TOTO format")
-                    else:
-                        logger.warning(f"Invalid TOTO adapter response format for cluster {cluster_name}")
-                        continue
-                        
-                except Exception as e:
-                    logger.warning(f"Failed to process cluster {cluster_name}: {e}")
-                    continue
-            
-            if not cluster_toto_data:
-                raise ValueError("No valid cluster data available after processing")
-            
-            from validation.toto_validator import validate_clusters_toto
-            results = validate_clusters_toto(cluster_toto_data, model_config)
-            
-            # Log summary
-            summary_df = validator.summarize_validation_results(results)
-            if not summary_df.empty:
-                logger.info(f"Validation completed for {len(summary_df)} components across {len(results)} clusters")
-            else:
-                logger.warning("Validation completed but no summary results generated")
-            
-            return results
+            # Run validation and return results
+            validation_results = validator.validate(
+                raw_prometheus_data,
+                prometheus_adapter,
+                model_config,
+                cluster_names
+            )
+            return validation_results
             
         except Exception as e:
             logger.error(f"Validation failed: {e}")

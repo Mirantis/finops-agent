@@ -66,7 +66,7 @@ agent:
 
 # Validation configuration
 validation:
-  enabled: False # ToDo: Fix validation
+  enabled: True # ToDo: Fix validation
   interval_cycles: 2  # Run validation every 5 forecast cycles
   train_ratio: 0.7    # Use 70% for training, 30% for testing
   log_level: INFO 

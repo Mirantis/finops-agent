@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: forecasting-agent
-        image: ramessesii/forecasting-agent:latest
+        image: ghcr.io/ramessesii2/finops-agent:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8081

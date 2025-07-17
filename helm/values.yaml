@@ -67,7 +67,7 @@ config:
   # Model configuration
   models:
     type: toto
-    forecast_horizon: 10 # number of days ahead in future
+    forecast_horizon: 7 # number of days ahead in future
     quantiles: [0.1, 0.5, 0.9]
     toto:
       checkpoint: Datadog/Toto-Open-Base-1.0
@@ -86,7 +86,7 @@ config:
 
   # Validation configuration
   validation:
-    enabled: false
+    enabled: true
     interval_cycles: 2  # Run validation every 2 forecast cycles
     train_ratio: 0.7    # Use 70% for training, 30% for testing
     log_level: INFO
@@ -122,7 +122,7 @@ grafana:
   dashboard:
     defaultTime:
       from: now
-      to: now+10d
+      to: now+7d
     # Variables for the dashboard
     variables:
       cluster:

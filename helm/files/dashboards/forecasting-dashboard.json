@@ -1604,6 +1604,154 @@
       "transparent": true,
       "type": "timeseries"
     }
+    ,
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 2000 },
+      "id": 900,
+      "panels": [],
+      "title": "Model / Cluster Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "finops-infinity" },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 2001 },
+      "id": 901,
+      "options": { "displayMode": "basic", "orientation": "horizontal", "showUnfilled": true },
+      "pluginVersion": "10.4.7",
+      "targets": [
+        {
+          
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "finops-infinity" },
+          "format": "table",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.summary.cluster_count",
+          "source": "url",
+          "type": "json",
+          "url": "/models",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "title": "Cluster Count",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "finops-infinity"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 2001
+      },
+      "id": 902,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "finops-infinity"
+          },
+          "format": "table",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.summary.metrics_validated",
+          "source": "url",
+          "type": "json",
+          "url": "/models",
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "title": "Metrics Validated",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "finops-infinity"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "max": 100,
+          "min": 0,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 2001
+      },
+      "id": 903,
+      "options": { "displayMode": "basic", "orientation": "horizontal", "showUnfilled": true },
+      "pluginVersion": "10.4.7",
+      "targets": [
+        {
+          
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "finops-infinity" },
+          "format": "table",
+          "parser": "backend",
+          "refId": "A",
+          "root_selector": "$.summary.average_mape",
+          "source": "url",
+          "type": "json",
+          "url": "/models",
+          "url_options": { "data": "", "method": "GET" }
+        }
+      ],
+      "title": "Average MAPE (All Clusters)",
+      "transparent": true,
+      "type": "gauge"
+    }
   ],
   "schemaVersion": 39,
   "tags": [
