@@ -57,7 +57,7 @@ config:
   collector:
     type: prometheus
     url: http://kof-mothership-promxy.kof.svc.cluster.local:8082
-    lookback_days: 7 
+    lookback_days: 11 
     step: "1h"  # Consistent step size for all queries
     disable_ssl: true
     timeout: 300

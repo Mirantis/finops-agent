@@ -61,9 +61,34 @@ class TOTOAdapter:
                 }
                 for i in range(series.series.shape[0])
             ]
-        
+
+        # Percentage metrics: scale 0-100 -> 0-1 for model stability, rescale later.
+        # Cost metrics: apply log1p transform before model and expm1 after.
+        # Build scale metadata lists to invert transformation later.
+        n_variates = series.series.shape[0]
+        transformed_series = series.series.clone().float()
+        transform_types = [None] * n_variates  # 'pct' | 'log' | None
+        for idx, meta in enumerate(variate_metadata):
+            mname = meta.get('metric_name', '')
+            if '_pct_' in mname:
+                # scale percentages to fraction
+                transformed_series[idx] = transformed_series[idx] / 100.0
+                transform_types[idx] = 'pct'
+            elif 'cost_usd_' in mname:
+                transformed_series[idx] = torch.log1p(torch.clamp_min(transformed_series[idx], 0.0))
+                transform_types[idx] = 'log'
+        # create a new MaskedTimeseries with transformed values
+        from toto.data.util.dataset import MaskedTimeseries
+        series_scaled = MaskedTimeseries(
+            transformed_series,
+            series.padding_mask,
+            series.id_mask,
+            series.timestamp_seconds,
+            series.time_interval_seconds,
+        )
+
         # Run TOTO inference
-        forecast_result = self._run_toto_inference(series, horizon)
+        forecast_result = self._run_toto_inference(series_scaled, horizon)
         
         # Generate future timestamps
         last_timestamp = series.timestamp_seconds[0, -1].item()
@@ -75,6 +100,13 @@ class TOTOAdapter:
         
         # Calculate quantiles for each variate (node-metric combination)
         samples = forecast_result.samples  # Shape: (num_samples, n_variates, horizon)
+        # Invert transforms per variate
+        for idx, ttype in enumerate(transform_types):
+            if ttype == 'pct':
+                samples[:, idx, :] = samples[:, idx, :] * 100.0
+            elif ttype == 'log':
+                samples[:, idx, :] = torch.expm1(samples[:, idx, :])
+
         series_results = {}
         
         for variate_idx, metadata in enumerate(variate_metadata):
