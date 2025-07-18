@@ -57,7 +57,7 @@ config:
   collector:
     type: prometheus
     url: http://kof-mothership-promxy.kof.svc.cluster.local:8082
-    lookback_days: 11 
+    lookback_days: 10 
     step: "1h"  # Consistent step size for all queries
     disable_ssl: true
     timeout: 300
@@ -78,11 +78,9 @@ config:
 
   # Optimizer configuration
   optimizer:
-    idle_threshold: 0.5  # 50% idle threshold
-    min_nodes: 1
-    min_savings: 100.0   # Minimum daily savings to report
-    min_confidence: 0.8
-    lookback_days: 7      # Days to analyze for optimization
+    idle_cpu_threshold: 0.5
+    idle_mem_threshold: 0.5
+    min_node_savings: 1
 
   # Validation configuration
   validation:

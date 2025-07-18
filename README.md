@@ -1,6 +1,6 @@
 # FinOps Agent
 
-FinOps forecasting agent that ingests Kubernetes cost/utilization metrics from Prometheus and generates forecasts using Datadog's TOTO zero-shot model. 
+FinOps forecasting agent ingests Kubernetes cost/utilization metrics from Prometheus and generates forecasts using Datadog's TOTO zero-shot model. 
 
 > Currently in development
 
@@ -8,8 +8,7 @@ FinOps forecasting agent that ingests Kubernetes cost/utilization metrics from P
 
 > The default value of Helm chart also includes a public image of finops-agent in ghcr and so optionally you can skip docker build & push.
 
-**Note**: 
-- Optimizers are broken at the moment.
+**Note**:
 - NBEATS & Prophet model adapter specific code will be removed completely.
 
 ## Architecture
@@ -105,6 +104,7 @@ helm install finops-agent ./helm --namespace finops --create-namespace
 helm install finops-agent ./helm \
   --set config.collector.url=http://your-prometheus:9090
 ```
+
 #### Grafana Dashboard
 
 The Helm chart includes a bundled Grafana instance with pre-configured forecasting dashboards.
@@ -162,6 +162,7 @@ api:
 HTTP API available at `http://localhost:8081`:
 
 ### Get Cluster Forecasts
+
 `GET /metrics/{cluster_name}`
 
 Returns forecast data for a specific cluster:
@@ -200,6 +201,7 @@ Returns forecast data for a specific cluster:
 ```
 
 ### List All Metrics Across Clusters
+
 `GET /metrics`
 
 Returns all available metrics across all clusters:
@@ -249,6 +251,7 @@ Returns all available metrics across all clusters:
 ```
 
 ### List Available Clusters
+
 `GET /clusters`
 
 Returns list of clusters with forecast data:
@@ -258,6 +261,7 @@ Returns list of clusters with forecast data:
 ```
 
 ### Get Available stats about cluster & model
+
 `GET /stats`
 
 Returns list of clusters with forecast data:
@@ -302,7 +306,29 @@ Returns list of clusters with forecast data:
     "format": "toto"
   }
 }
+```
 
+### Get Available stats about cluster & model
+
+`GET /optimize`
+
+Returns list of recommendations to optimize infrastructure:
+
+```json
+{
+  "status": "success",
+  "recommendations": [
+    {
+      "cluster": "aws-ramesses-regional-0",
+      "type": "idle_capacity",
+      "node_to_remove": "aws-ramesses-regional-0-md-8snzm-9shzt",
+      "forecast_horizon_days": 7,
+      "estimated_savings_usd": 7.82,
+      "message": "Over the 7-day forecast, removing node 'aws-ramesses-regional-0-md-8snzm-9shzt' could save approximately $7.82."
+    }
+  ],
+  "generated_at": "2025-07-18T10:21:16.642907"
+}
 ```
 
 ## Documentation

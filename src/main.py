@@ -51,7 +51,7 @@ def _start_forecast_server(host: str, port: int):
             except Exception as exc:
                 logger.error(f"Failed to send HTTP response: {exc}")
         
-        def _handle_model_endpoint(self):
+        def _handle_model_stats_endpoint(self):
             try:
                 validation_results = exported_forecasts.get('_validation_results')
                 
@@ -136,8 +136,20 @@ def _start_forecast_server(host: str, port: int):
                                                  for forecasts in cluster_metrics.values())
                 })
             elif self.path in ("/stats", "/stats/"):
-                # Return validation results and model information
-                self._handle_model_endpoint()
+                 # Return validation results and model information
+                 self._handle_model_stats_endpoint()
+            elif self.path in ("/optimize", "/optimize/"):
+                 # Generate optimisation recommendations on demand
+                 try:
+                     recs = exported_forecasts['_recommendations']
+                     self._send_json({
+                         "status": "success",
+                         "recommendations": recs,
+                         "generated_at": datetime.now().isoformat()
+                     })
+                 except Exception as exc:
+                     logger.error("Optimizer error: %s", exc)
+                     self._send_json({"status": "error", "message": str(exc)}, status=500)
             elif self.path.startswith("/metrics/"):
                 # Return metrics for specific cluster
                 cluster = self.path[len("/metrics/"):]
@@ -155,7 +167,8 @@ def _start_forecast_server(host: str, port: int):
                         "/clusters": "List all available clusters",
                         "/metrics": "Get all metrics from all clusters",
                         "/metrics/{clusterName}": "Get forecasts for specific cluster",
-                        "/stats": "Validation results"
+                        "/stats": "Validation results",
+                        "/optimize": "Generate optimisation recommendations"
                     },
                     "active_clusters": len(active_clusters)
                 })
@@ -516,6 +529,12 @@ class ForecastingAgent:
                 api_url = f"http://{api_host}:{api_port}/metrics/{{clustername}}"
                 logger.info(f"Forecast metrics updated and available at {api_url}")
                 
+                recommendations = self.optimizer.optimise(exported_forecasts)
+                exported_forecasts['_recommendations'] = recommendations
+                
+                api_url = f"http://{api_host}:{api_port}/optimize"
+                logger.info(f"Optimizations recommendations are available at {api_url}")
+
                 cycle_count += 1
                 logger.info(f"Waiting {self.config['agent']['interval']}s before next collection...")
                 time.sleep(self.config['agent']['interval'])

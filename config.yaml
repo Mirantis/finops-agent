@@ -3,7 +3,7 @@ collector:
   type: prometheus
   url: http://localhost:8082
   lookback_days: 14 
-  step: "30m"  # Consistent step size for all queries
+  step: "1h"  # Consistent step size for all queries
   disable_ssl: true
   timeout: 300
   max_retries: 3
@@ -43,12 +43,9 @@ models:
 
 # Optimizer configuration
 optimizer:
-  idle_threshold: 0.5  # 50% idle threshold
-  min_nodes: 1
-  min_savings: 100.0   # Minimum daily savings to report
-  min_confidence: 0.8
-
-  lookback_days: 7      # Days to analyze for optimization
+  idle_cpu_threshold: 0.5
+  idle_mem_threshold: 0.5
+  min_node_savings: 1
 
 # Metrics configuration
 metrics:
