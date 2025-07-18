@@ -140,9 +140,18 @@ class ForecastValidator:
     @staticmethod
     def _compute_metrics(pred: np.ndarray, actual: np.ndarray) -> Dict[str, float]:
         mae = float(np.mean(np.abs(pred - actual)))
-        # Avoid division by zero in MAPE; mask zeros
-        mask = actual != 0
-        mape = float(np.mean(np.abs((actual[mask] - pred[mask]) / actual[mask])) * 100) if mask.any() else float("nan")
+
+        # exclude very small actual values to avoid division blow-ups
+        # Determine dynamic epsilon as 1% of median absolute actual (or fallback to 1e-2)
+        median_abs = np.median(np.abs(actual))
+        epsilon = max(0.01 * median_abs, 1e-2)
+
+        mask = np.abs(actual) > epsilon
+        if mask.any():
+            mape = float(np.mean(np.abs((actual[mask] - pred[mask]) / actual[mask])) * 100)
+        else:
+            mape = float("nan")
+
         rmse = float(np.sqrt(np.mean((pred - actual) ** 2)))
         return {"mae": mae, "mape": mape, "rmse": rmse}
 

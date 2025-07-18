@@ -120,9 +120,6 @@ grafana:
     
   # Dashboard configuration
   dashboard:
-    defaultTime:
-      from: now
-      to: now+7d
     # Variables for the dashboard
     variables:
       cluster:

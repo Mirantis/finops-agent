@@ -10,7 +10,7 @@ FinOps forecasting agent that ingests Kubernetes cost/utilization metrics from P
 
 **Note**: 
 - Optimizers are broken at the moment.
-- NBEATS adapter specific code will be removed completely.
+- NBEATS & Prophet model adapter specific code will be removed completely.
 
 ## Architecture
 
@@ -257,6 +257,54 @@ Returns list of clusters with forecast data:
 {"clusters": ["prod-cluster", "staging-cluster"], "count" : 2}
 ```
 
+### Get Available stats about cluster & model
+`GET /stats`
+
+Returns list of clusters with forecast data:
+
+```json
+{
+  "status": "success",
+  "timestamp": "2025-07-18T12:41:48.686914",
+  "validation_results": {
+    "aws-ramesses-regional-0": {
+      "cost_usd_per_cluster_cluster-aggregate": {
+        "mae": 0.0006218099733814597,
+        "mape": 0.27760169468820095,
+        "rmse": 0.0006950463284738362
+      },
+      "cpu_pct_per_cluster_cluster-aggregate": {
+        "mae": 3.592783212661743,
+        "mape": 36.132195591926575,
+        "rmse": 3.7026379108428955
+      },
+      .....
+      "cpu_total_cores_per_node_aws-ramesses-regional-0-md-8snzm-stgb6": {
+        "mae": 0.01127923745661974,
+        "mape": 0.563961872830987,
+        "rmse": 0.011976901441812515
+      }
+    }
+  },
+  "summary": {
+    "cluster_count": 1,
+    "clusters_with_errors": 0,
+    "metrics_validated": 21,
+    "average_mape": 19.9
+  },
+  "validation_config": {
+    "train_ratio": 0.7,
+    "metrics": [
+      "mape",
+      "mae",
+      "rmse"
+    ],
+    "format": "toto"
+  }
+}
+
+```
+
 ## Documentation
 
 For detailed implementation details and advanced configuration options, see [docs/appendix.md](docs/appendix.md).
@@ -270,13 +318,8 @@ The agent includes built-in forecast validation:
 - **Train/Test Split**: Configurable ratio (default 70/30)
 - **Metrics**: MAPE, MAE, RMSE calculated automatically
 - **Frequency**: Runs every N forecast cycles (configurable)
-- **Logging**: Detailed accuracy reports in application logs
 
-```
-INFO: Component cost: MAPE=12.34%, MAE=0.0456, RMSE=0.0789
-INFO: Component cpu_usage: MAPE=8.91%, MAE=2.1234, RMSE=3.4567
-INFO: Validation completed for 6 components across 2 clusters
-```
+See above section `Get Available stats about cluster & model`
 
 ## 🔧 Troubleshooting
 

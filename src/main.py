@@ -135,7 +135,7 @@ def _start_forecast_server(host: str, port: int):
                     "total_forecast_entries": sum(len(forecasts) if isinstance(forecasts, list) else 1 
                                                  for forecasts in cluster_metrics.values())
                 })
-            elif self.path in ("/models", "/models/"):
+            elif self.path in ("/stats", "/stats/"):
                 # Return validation results and model information
                 self._handle_model_endpoint()
             elif self.path.startswith("/metrics/"):
@@ -155,7 +155,7 @@ def _start_forecast_server(host: str, port: int):
                         "/clusters": "List all available clusters",
                         "/metrics": "Get all metrics from all clusters",
                         "/metrics/{clusterName}": "Get forecasts for specific cluster",
-                        "/models": "Validation results"
+                        "/stats": "Validation results"
                     },
                     "active_clusters": len(active_clusters)
                 })

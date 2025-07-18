@@ -2,7 +2,7 @@
 collector:
   type: prometheus
   url: http://localhost:8082
-  lookback_days: 7 
+  lookback_days: 14 
   step: "30m"  # Consistent step size for all queries
   disable_ssl: true
   timeout: 300
@@ -17,7 +17,6 @@ models:
   quantiles: [0.1, 0.5, 0.9]
   prophet:
     # interval_width: 0.95 # set the uncertainty interval to 95% (the Prophet default is 80%)
-    # Frequency is now inferred automatically from the data. Ensure your time series is regularly spaced.
     changepoint_prior_scale: 0.05
     seasonality_prior_scale: 10.0
     holidays_prior_scale: 10.0
@@ -26,9 +25,6 @@ models:
     weekly_seasonality: true
     yearly_seasonality: true
     regressors: []  # Optional additional regressors
-    # Prophet-specific config (empty for now, add params as needed)
-  arima:
-    # ARIMA-specific config
   nbeats:
     input_chunk_length: 24
     output_chunk_length: 24

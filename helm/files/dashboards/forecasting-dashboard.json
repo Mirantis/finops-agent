@@ -1630,7 +1630,7 @@
           "root_selector": "$.summary.cluster_count",
           "source": "url",
           "type": "json",
-          "url": "/models",
+          "url": "/stats",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -1687,7 +1687,7 @@
           "root_selector": "$.summary.metrics_validated",
           "source": "url",
           "type": "json",
-          "url": "/models",
+          "url": "/stats",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -1744,7 +1744,7 @@
           "root_selector": "$.summary.average_mape",
           "source": "url",
           "type": "json",
-          "url": "/models",
+          "url": "/stats",
           "url_options": { "data": "", "method": "GET" }
         }
       ],
@@ -1845,8 +1845,8 @@
     ]
   },
   "time": {
-    "from": "{{ .Values.grafana.dashboard.defaultTime.from }}",
-    "to": "{{ .Values.grafana.dashboard.defaultTime.to }}"
+    "from": "now",
+    "to": "now+{{ .Values.config.models.forecast_horizon }}d"
   },
   "timepicker": {},
   "timezone": "browser",
