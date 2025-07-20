@@ -465,8 +465,8 @@ class ForecastingAgent:
         """Run the forecasting agent continuously."""
         global exported_forecasts
         metrics_conf = self.config['metrics']
-        api_port = metrics_conf.get('forecast_api_port', metrics_conf['port'])
-        api_host = metrics_conf.get('forecast_api_host', metrics_conf.get('host', '0.0.0.0'))
+        api_port = metrics_conf.get('forecast_api_port', 8081)
+        api_host = metrics_conf.get('forecast_api_host', '0.0.0.0')
         _start_forecast_server(api_host, api_port)
         
         # Check if validation is enabled

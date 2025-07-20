@@ -1,8 +1,12 @@
+# Agent configuration
+agent:
+  interval: 3600  # seconds between forecast updates
+
 # Collector configuration
 collector:
   type: prometheus
   url: http://localhost:8082
-  lookback_days: 14 
+  lookback_days: 21 
   step: "1h"  # Consistent step size for all queries
   disable_ssl: true
   timeout: 300
@@ -12,11 +16,9 @@ collector:
 # Model configuration
 models:
   type: toto
-  freq: "h" 
   forecast_horizon: 7 # number of days ahead in future
   quantiles: [0.1, 0.5, 0.9]
   prophet:
-    # interval_width: 0.95 # set the uncertainty interval to 95% (the Prophet default is 80%)
     changepoint_prior_scale: 0.05
     seasonality_prior_scale: 10.0
     holidays_prior_scale: 10.0
@@ -49,17 +51,12 @@ optimizer:
 
 # Metrics configuration
 metrics:
-  port: 8081
-  host: "0.0.0.0"
-  path: /metrics
-
-# Agent configuration
-agent:
-  interval: 300  # seconds between forecast updates
+  forecast_api_port: 8081
+  forecast_api_host: "0.0.0.0"
 
 # Validation configuration
 validation:
-  enabled: True # ToDo: Fix validation
+  enabled: True
   interval_cycles: 2  # Run validation every 5 forecast cycles
   train_ratio: 0.7    # Use 70% for training, 30% for testing
   log_level: INFO 

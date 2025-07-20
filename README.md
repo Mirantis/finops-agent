@@ -1,8 +1,18 @@
 # FinOps Agent
 
-FinOps forecasting agent ingests Kubernetes cost/utilization metrics from Prometheus and generates forecasts using Datadog's TOTO zero-shot model. 
+FinOps forecasting agent is an AI-driven forecasting tool that predicts your Kubernetes costs and resource usage and then gives you actionable savings recommendations.
 
-> Currently in development
+### Key Value Props
+
+	1. Cost Forecasting – Predict your 7 or 30-day future spend at cluster and node granularity.
+
+	2. AI-Powered – Zero-shot learning via Datadog’s open-source Toto model.
+
+	3. Recommendations – Automatically spot idle nodes and estimate exact dollar-savings.
+  
+	4. Plug & Play – Configure in helm/values.yaml, Helm does the rest; integrate via simple JSON APIs.
+
+> In development
 
 > Helm & K8s deployment files work as-is, just build Docker image, push, and apply deployment. 
 
@@ -125,6 +135,10 @@ Dashboard Features
 Configure via `config.yaml`:
 
 ```yaml
+# Agent runtime settings
+agent:
+  interval: 3600  # seconds between forecast updates
+
 # Prometheus data source
 collector:
   type: prometheus
@@ -146,15 +160,23 @@ models:
     device: cpu  # or cuda
     context_length: 4096
     num_samples: 256
+# Optimizer configuration
+optimizer:
+  idle_cpu_threshold: 0.5
+  idle_mem_threshold: 0.5
+  min_node_savings: 1
 
-# Agent runtime settings
-agent:
-  interval: 300  # seconds between forecast updates
+# Metrics configuration
+metrics:
+  forecast_api_port: 8081
+  forecast_api_host: "0.0.0.0"
 
-# API server
-api:
-  host: "0.0.0.0"
-  port: 8081
+# Validation configuration
+validation:
+  enabled: True
+  interval_cycles: 2  # Run validation every 5 forecast cycles
+  train_ratio: 0.7    # Use 70% for training, 30% for testing
+  log_level: INFO 
 ```
 
 ## API Endpoints
