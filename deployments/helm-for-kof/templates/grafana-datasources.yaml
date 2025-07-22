@@ -1,0 +1,27 @@
+{{- if .Values.grafana.enabled }}
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: {{ include "finops-agent.fullname" . }}-datasource
+  namespace: {{ .Release.Namespace }}
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  allowCrossNamespaceImport: true
+  datasource:
+    name: FinOps Agent Infinity
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    uid: finops-infinity
+    isDefault: true
+    url: "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.forecast_api_port }}"
+    jsonData:
+      timeoutInSeconds: 60
+      tlsSkipVerify: true
+      allowedHosts:
+        - "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.forecast_api_port }}"
+      allowDangerousHTTPMethods: false
+      baseUrl: "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.forecast_api_port }}"
+    secureJsonData: {}
+{{- end }}

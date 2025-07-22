@@ -1,0 +1,106 @@
+# Default values for finops-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/ramessesii2/finops-agent
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8081
+  targetPort: metrics
+  name: metrics
+
+resources: {}
+  # limits:
+  #   cpu: 500m
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 256Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Configuration for the finops-agent
+config:
+  # Agent configuration
+  agent:
+    interval: 3600  # seconds between forecast updates
+  
+  # Collector configuration
+  collector:
+    type: prometheus
+    url: http://kof-mothership-promxy.kof.svc.cluster.local:8082
+    lookback_days: 18 
+    step: "1h"  # Consistent step size for all queries
+    disable_ssl: true
+    timeout: 300
+    max_retries: 3
+    chunk_days: 0.25  # 6 hours for better granular processing
+
+  # Model configuration
+  models:
+    type: toto
+    forecast_horizon: 7 # number of days ahead in future
+    quantiles: [0.1, 0.5, 0.9]
+    toto:
+      checkpoint: Datadog/Toto-Open-Base-1.0
+      device: cpu              # or cuda
+      context_length: 4096
+      num_samples: 256
+      compile: true
+
+  # Optimizer configuration
+  optimizer:
+    idle_cpu_threshold: 0.5
+    idle_mem_threshold: 0.5
+    min_node_savings: 1
+
+  # Validation configuration
+  validation:
+    enabled: true
+    interval_cycles: 2  # Run validation every 2 forecast cycles
+    train_ratio: 0.7    # Use 70% for training, 30% for testing
+    log_level: INFO
+
+  # Metrics configuration
+  metrics:
+    forecast_api_port: 8081
+    forecast_api_host: "0.0.0.0"
+
+# Grafana
+grafana:
+  enabled: true
+  # GrafanaDasboard Namespace has to be the same as the kof GrafanaDashboards Namespace
+  dashboardNamespace: "kof"  # Namespace for GrafanaDashboard CRD
+  dashboardLabels:                     # Labels for GrafanaDashboard CRD
+    app: grafana
+  dashboardFolder: "General"   # kof-grafana-dashboard default folder
+
+  

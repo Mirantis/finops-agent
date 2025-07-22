@@ -1,0 +1,23 @@
+apiVersion: v2
+name: finops-agent
+description: A Helm chart for FinOps Agent - Financial Operations Forecasting Agent
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/ramessesii2/finops-agent
+sources:
+  - https://github.com/ramessesii2/finops-agent
+maintainers:
+  - name: Mirantis OSPO
+    email: ospo@mirantis.com
+  - name: Satyam Bhardwaj
+    email: stmbhardwaj@gmail.com
+keywords:
+  - finops
+  - forecasting
+  - kubernetes
+  - cost-optimization
+  - prometheus
+  - toto
+annotations:
+  category: Analytics

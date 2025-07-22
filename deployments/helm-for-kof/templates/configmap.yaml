@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "finops-agent.fullname" . }}-config
+  labels:
+    {{- include "finops-agent.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    # Agent configuration
+    agent:
+      interval: {{ .Values.config.agent.interval }}
+
+    # Collector configuration
+    collector:
+      type: {{ .Values.config.collector.type }}
+      url: {{ .Values.config.collector.url }}
+      lookback_days: {{ .Values.config.collector.lookback_days }}
+      step: {{ .Values.config.collector.step | quote }}
+      disable_ssl: {{ .Values.config.collector.disable_ssl }}
+      timeout: {{ .Values.config.collector.timeout }}
+      max_retries: {{ .Values.config.collector.max_retries }}
+      chunk_days: {{ .Values.config.collector.chunk_days }}
+
+    # Model configuration
+    models:
+      type: {{ .Values.config.models.type }}
+      freq: {{ .Values.config.models.freq | quote }}
+      forecast_horizon: {{ .Values.config.models.forecast_horizon }}
+      quantiles: {{ .Values.config.models.quantiles | toJson }}
+      toto:
+        checkpoint: {{ .Values.config.models.toto.checkpoint }}
+        device: {{ .Values.config.models.toto.device }}
+        context_length: {{ .Values.config.models.toto.context_length }}
+        num_samples: {{ .Values.config.models.toto.num_samples }}
+        compile: {{ .Values.config.models.toto.compile }}
+
+    # Optimizer configuration
+    optimizer:
+      idle_threshold: {{ .Values.config.optimizer.idle_threshold }}
+      min_nodes: {{ .Values.config.optimizer.min_nodes }}
+      min_savings: {{ .Values.config.optimizer.min_savings }}
+      min_confidence: {{ .Values.config.optimizer.min_confidence }}
+      lookback_days: {{ .Values.config.optimizer.lookback_days }}
+
+    # Validation configuration
+    validation:
+      enabled: {{ .Values.config.validation.enabled }}
+      interval_cycles: {{ .Values.config.validation.interval_cycles }}
+      train_ratio: {{ .Values.config.validation.train_ratio }}
+      log_level: {{ .Values.config.validation.log_level }}
+
+    # Metrics configuration
+    metrics:
+      forecast_api_port: {{ .Values.config.metrics.forecast_api_port }}
+      forecast_api_host: {{ .Values.config.metrics.forecast_api_host | quote }}

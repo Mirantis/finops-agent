@@ -1,0 +1,18 @@
+{{- if .Values.grafana.enabled }}
+{{- range $path, $_ := .Files.Glob "files/dashboards/**" }}
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: {{ include "finops-agent.fullname" $ }}-{{ base $path | trimSuffix ".json" }}
+  namespace: {{ $.Values.grafana.dashboardNamespace | quote }}
+  labels:
+{{ toYaml $.Values.grafana.dashboardLabels | indent 4 }}
+spec:
+  folder: {{ $.Values.grafana.dashboardFolder | quote }}
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  json: |-
+{{ tpl ($.Files.Get $path) $ | indent 6 }}
+{{- end }}
+{{- end }}
