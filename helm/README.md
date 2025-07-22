@@ -129,8 +129,6 @@ The **Forecasting Dashboard** provides comprehensive visualization of:
 | `grafana.config.security.admin_user` | Admin username | `admin` |
 | `grafana.config.security.admin_password` | Admin password | `finops123` |
 
-```
-
 ## Monitoring
 
 The application exposes metrics on `/metrics` endpoint (port 8081 by default). You can configure Prometheus to scrape these metrics:
