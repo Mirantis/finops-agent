@@ -1,0 +1,13 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: custom-helm-repo
+  namespace: kcm-system
+  labels:
+    k0rdent.mirantis.com/managed: "true"
+spec:
+  insecure: true
+  interval: 10m0s
+  provider: generic
+  type: oci
+  url: oci://ghcr.io/ramessesii2/charts

@@ -1,0 +1,14 @@
+apiVersion: k0rdent.mirantis.com/v1beta1
+kind: MultiClusterService
+metadata:
+  name: finops-mcs
+spec:
+  clusterSelector:
+    matchLabels:
+      k0rdent.mirantis.com/management-cluster: "true"
+      sveltos-agent: present
+  serviceSpec:
+    services: 
+      - template: finops-agent-0-1-0
+        name: finops-agent
+        namespace: kcm-system

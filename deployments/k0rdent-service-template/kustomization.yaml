@@ -1,0 +1,4 @@
+resources:
+  - helm-repo.yaml
+  - service-template.yaml
+  - beach-head-mcs.yaml

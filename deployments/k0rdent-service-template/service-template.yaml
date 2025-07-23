@@ -1,0 +1,14 @@
+apiVersion: k0rdent.mirantis.com/v1beta1
+kind: ServiceTemplate
+metadata:
+  name: finops-agent-0-1-0
+  namespace: kcm-system
+spec:
+  helm:
+    chartSpec:
+      chart: finops-agent-kof
+      version: 0.1.0
+      interval: 10m0s
+      sourceRef:
+        kind: HelmRepository
+        name: custom-helm-repo

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: finops-agent
+name: finops-agent-kof
 description: A Helm chart for FinOps Agent - Financial Operations Forecasting Agent
 type: application
 version: 0.1.0
