@@ -22,11 +22,18 @@ KOF‑enabled (k0rdent‑managed) cluster.
 ```bash
 # 1. Add the Helm repo so Flux can fetch your chart
 kubectl apply -f helm-repo.yaml
-
-# 2. Register the ServiceTemplate (one‑time)
+```
+```bash
+# 2. Register the ServiceTemplate
 kubectl apply -f service-template.yaml
+```
+**Wait for the finops-agent-0-1-0 servicetemplate to become `VALID: true`**
+```bash
+kubectl get servicetemplate -n kcm-system
+```
 
-# 3. Deploy FinOps Agent everywhere that matches the selector
+```bash
+# 3. Deploy FinOps Agent on the mothership k0rdent
 kubectl apply -f beach-head-mcs.yaml
 ```
 
