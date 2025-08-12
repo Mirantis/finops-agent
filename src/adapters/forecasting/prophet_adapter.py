@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from darts.models import Prophet as DartsProphet
 from darts import TimeSeries
 from core.forecasting import ForecastingModel
@@ -60,19 +59,3 @@ class ProphetAdapter(ForecastingModel):
         if 'mape' in metrics:
             results['mape'] = np.mean(np.abs((y_true - y_pred) / np.maximum(np.abs(y_true), 1e-8))) * 100
         return results
-
-    def plot_forecast(self, forecast: dict, save_path: str = None):
-        df = forecast['forecast']
-        plt.figure(figsize=(10, 5))
-        plt.plot(df['ds'], df['value'], label='Forecast')
-        if 'lower_bound' in forecast and 'upper_bound' in forecast:
-            plt.fill_between(df['ds'], forecast['lower_bound']['value'], forecast['upper_bound']['value'], color='gray', alpha=0.3, label='Confidence Interval')
-        plt.legend()
-        plt.title('Prophet Forecast (Darts)')
-        if save_path:
-            plt.savefig(save_path)
-            plt.close()
-        else:
-            plt.show()
-
-

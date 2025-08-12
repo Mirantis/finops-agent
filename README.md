@@ -2,23 +2,22 @@
 
 FinOps forecasting agent is an AI-driven forecasting tool that predicts your Kubernetes costs and resource usage and then gives you actionable savings recommendations.
 
-### Key Value Props
+## Key Value Props
 
-	1. Cost Forecasting – Predict your 7 or 30-day future spend at cluster and node granularity.
+1. Cost Forecasting – Predict your 7 or 30-day future spend at cluster and node granularity.
 
-	2. AI-Powered – Zero-shot learning via Datadog’s open-source Toto model.
+2. AI-Powered – Zero-shot learning via Datadog's open-source Toto model.
 
-	3. Recommendations – Automatically spot idle nodes and estimate exact dollar-savings.
-  
-	4. Plug & Play – Configure in helm/values.yaml, Helm does the rest; integrate via simple JSON APIs.
+3. Recommendations – Automatically spot idle nodes and estimate exact dollar-savings.
+
+4. Plug & Play – Configure in helm/values.yaml, Helm does the rest; integrate via simple JSON APIs.
 
 > In development
-
-> Helm & K8s deployment files work as-is, just build Docker image, push, and apply deployment. 
-
+> Helm & K8s deployment files work as-is, just build Docker image, push, and apply deployment.
 > The default value of Helm chart also includes a public image of finops-agent in ghcr and so optionally you can skip docker build & push.
 
-**Note**:
+**Note**
+
 - NBEATS & Prophet model adapter specific code will be removed completely.
 
 ## Architecture
@@ -27,7 +26,7 @@ FinOps forecasting agent is an AI-driven forecasting tool that predicts your Kub
 
 ## Project Structure
 
-```
+```bash
 forecasting-agent/
 ├── src/
 │   ├── main.py                        # Main application entry point
@@ -64,12 +63,13 @@ forecasting-agent/
 The `toto/` folder contains utility code directly from upstream [Datadog/Toto](https://github.com/Datadog/TOTO) repository. This provides the necessary utilities and helper functions to leverage the TOTO zero-shot forecasting model, including tensor operations, data preprocessing, and model inference capabilities.
 
 ## Quick Start
-#### Prerequisites
 
-- Access to a Prometheus instance **or** any Prometheus-compatible HTTP endpoint.  
+### Prerequisites
+
+- Access to a Prometheus instance **or** any Prometheus-compatible HTTP endpoint.
   This can be:
   - A direct Prometheus server (`http://prometheus:9090`) running inside your cluster.
-  - The “KOF” proxy that exposes a Prometheus-style API.
+  - The "KOF" proxy that exposes a Prometheus-style API.
 
 ### Docker Deployment
 
@@ -79,9 +79,38 @@ docker build -t forecasting-agent:latest .
 docker push your-registry/forecasting-agent:latest
 ```
 
+### Multi-Platform Docker Builds
+
+```bash
+# Build for specific platform
+docker build --platform linux/amd64 -t finops-agent:latest-amd64 .
+docker build --platform linux/arm64 -t finops-agent:latest-arm64 .
+
+# Build and push to registry
+docker buildx build --platform linux/amd64,linux/arm64 \
+  --tag your-registry/finops-agent:latest \
+  --push .
+```
+
+#### 🔍 Troubleshooting Builds
+
+```bash
+# Check buildx availability
+docker buildx version
+
+# Set up buildx if needed
+docker buildx create --use
+
+# Inspect builder
+docker buildx inspect --bootstrap
+
+# Clean build cache
+docker buildx prune -f
+```
+
 ### Kubernetes
 
-* Patch the [kubernetes deployment resource](./deployments/kubernetes/deployment.yaml) with your public {docker-image} of Finops application.
+- Patch the [kubernetes deployment resource](./deployments/kubernetes/deployment.yaml) with your public {docker-image} of Finops application.
 
 ```bash
 # Apply Kubernetes deployment
@@ -119,7 +148,7 @@ helm install finops-agent ./helm \
 
 The Helm chart includes a bundled Grafana instance with pre-configured forecasting dashboards.
 
-* Port forward to access Grafana UI
+- Port forward to access Grafana UI
 kubectl port-forward service/finops-agent-grafana 3001:3001
 
 `
@@ -127,7 +156,9 @@ Default: Go to http://localhost:3001 - {user: admin, pass: finops123}
 `
 
 Dashboard Features
+
 - 9 forecasting panels (4 node-level + 5 cluster-level)
+
 - 7-day forecast horizon
 
 ## Configuration
@@ -154,7 +185,7 @@ models:
   type: toto
   forecast_horizon: 7  # days ahead
   quantiles: [0.1, 0.5, 0.9]
-  
+
   toto:
     checkpoint: Datadog/Toto-Open-Base-1.0
     device: cpu  # or cuda
@@ -176,7 +207,7 @@ validation:
   enabled: True
   interval_cycles: 2  # Run validation every 5 forecast cycles
   train_ratio: 0.7    # Use 70% for training, 30% for testing
-  log_level: INFO 
+  log_level: INFO
 ```
 
 ## API Endpoints
@@ -330,7 +361,7 @@ Returns list of clusters with forecast data:
 }
 ```
 
-### Get Available stats about cluster & model
+#### Get Available recommendations to optimize infrastructure
 
 `GET /optimize`
 
@@ -372,11 +403,13 @@ See above section `Get Available stats about cluster & model`
 ## 🔧 Troubleshooting
 
 **Prometheus Connection Failed**
+
 - Verify Prometheus URL in `config.yaml`
 - Check network connectivity: `curl http://your-prometheus:9090/api/v1/query?query=up`
 - Review agent logs for detailed error messages
 
 **High MAPE Values**
+
 - Increase `lookback_days` for more training data
 - Adjust `forecast_horizon` to shorter periods
 - Check data quality and missing values

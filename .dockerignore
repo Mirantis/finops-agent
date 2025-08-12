@@ -1,0 +1,89 @@
+# Git and version control
+.git
+.gitignore
+.gitattributes
+
+# Python cache and build artifacts
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.nox
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation and development files
+docs/
+*.md
+LICENSE
+README.md
+helm/
+deployments/
+tests/
+*.ipynb
+.ipynb_checkpoints/
+
+# Build artifacts
+*.tgz
+*.tar.gz
+dist/
+build/
+*.egg-info/
+
+# Docker files (except the one we need)
+Dockerfile.*
+!Dockerfile
+amd.Dockerfile
+
+# Development and testing
+test_*.py
+debug_*.py
+exp.ipynb
+promqls.ipynb
+Untitled1.ipynb
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Configuration overrides
+config.local.yaml
+.env.local

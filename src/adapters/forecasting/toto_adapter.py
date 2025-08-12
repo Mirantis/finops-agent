@@ -4,9 +4,9 @@ import time
 
 import numpy as np
 import torch
-from toto.data.util.dataset import MaskedTimeseries  
-from toto.inference.forecaster import TotoForecaster  
-from toto.model.toto import Toto 
+from toto.data.util.dataset import MaskedTimeseries
+from toto.inference.forecaster import TotoForecaster
+from toto.model.toto import Toto
 
 class TOTOAdapter:
     """Adapter for Datadog's TOTO zero-shot forecasting model."""
@@ -14,6 +14,40 @@ class TOTOAdapter:
     def __init__(self, config: Optional[Dict] = None):
         self.config = config or {}
         self.logger = logging.getLogger(self.__class__.__name__)
+        self._model = None
+        self._forecaster = None
+        self._model_loaded = False
+
+    def _ensure_model_loaded(self):
+        """Ensure TOTO model is loaded, downloading if necessary."""
+        if self._model_loaded:
+            return
+
+        try:
+            checkpoint = self.config.get("checkpoint", "Datadog/Toto-Open-Base-1.0")
+            device = self.config.get("device", "cpu")
+
+            self.logger.info(f"Loading TOTO model: {checkpoint}")
+
+            # Always download model from Hugging Face (no caching for now)
+            self.logger.info(f"Downloading TOTO model: {checkpoint}")
+            self._model = Toto.from_pretrained(checkpoint).to(device)
+
+            if self.config.get("compile", True):
+                self.logger.info("Compiling model...")
+                self._model.compile()
+
+            self._forecaster = TotoForecaster(self._model.model)
+            self._model_loaded = True
+            self.logger.info("TOTO model loaded successfully")
+
+        except Exception as e:
+            self.logger.error(f"Failed to load TOTO model: {str(e)}")
+            # Reset state
+            self._model = None
+            self._forecaster = None
+            self._model_loaded = False
+            raise
 
     def forecast(
         self,
@@ -49,8 +83,11 @@ class TOTOAdapter:
             - 'horizon': Forecast horizon
             - 'time_interval_seconds': Time interval in seconds
         """
+        # Ensure model is loaded before forecasting
+        self._ensure_model_loaded()
+
         quantiles = quantiles or [0.1, 0.5, 0.9]
-        
+
         # Set default variate metadata if not provided
         if variate_metadata is None:
             variate_metadata = [
@@ -89,7 +126,7 @@ class TOTOAdapter:
 
         # Run TOTO inference
         forecast_result = self._run_toto_inference(series_scaled, horizon)
-        
+
         # Generate future timestamps
         last_timestamp = series.timestamp_seconds[0, -1].item()
         time_interval = series.time_interval_seconds[0].item()
@@ -97,7 +134,7 @@ class TOTOAdapter:
             int((last_timestamp + (i + 1) * time_interval) * 1000)  # Convert to milliseconds
             for i in range(horizon)
         ]
-        
+
         # Calculate quantiles for each variate (node-metric combination)
         samples = forecast_result.samples  # Shape: (num_samples, n_variates, horizon)
         # Invert transforms per variate
@@ -108,11 +145,11 @@ class TOTOAdapter:
                 samples[:, idx, :] = torch.expm1(samples[:, idx, :])
 
         series_results = {}
-        
+
         for variate_idx, metadata in enumerate(variate_metadata):
             variate_samples = samples[:, variate_idx, :]  # Shape: (num_samples, horizon)
             variate_quantiles = {}
-            
+
             for q in quantiles:
                 quantile_values = []
                 for time_idx in range(horizon):
@@ -120,13 +157,13 @@ class TOTOAdapter:
                     quantile_value = torch.quantile(time_samples, q).item()
                     quantile_values.append(self._to_scalar(quantile_value))
                 variate_quantiles[f"q{q:.2f}"] = quantile_values
-            
+
             # Use variate_id as key to ensure uniqueness
             series_results[metadata['variate_id']] = {
                 'quantiles': variate_quantiles,
                 'metadata': metadata
             }
-        
+
         return {
             'samples': samples,
             'series': series_results,
@@ -135,34 +172,26 @@ class TOTOAdapter:
             'horizon': horizon,
             'time_interval_seconds': time_interval
         }
-    
+
     def _run_toto_inference(self, masked_timeseries: MaskedTimeseries, horizon: int):
         """Run TOTO model inference on tensor data.
-        
+
         Args:
             masked_timeseries: Input tensor data
             horizon: Number of future steps to predict
-            
+
         Returns:
             TOTO forecast result object
         """
-        device = "cpu"
-        
+        if not self._model_loaded:
+            raise RuntimeError("TOTO model not loaded. Call _ensure_model_loaded() first.")
+
         try:
-            # Load TOTO model
-            checkpoint = self.config.get("checkpoint", "Datadog/Toto-Open-Base-1.0")
-            toto_model = Toto.from_pretrained(checkpoint).to(device)
-            
-            if self.config.get("compile", True):
-                toto_model.compile()
-            
-            forecaster = TotoForecaster(toto_model.model)
-            
-            # Run forecast
-            forecast_result = forecaster.forecast(
+            # Run forecast using pre-loaded model
+            forecast_result = self._forecaster.forecast(
                 masked_timeseries,
                 # We can set any number of timesteps into the future that we'd like to forecast. Because Toto is an autoregressive model,
-                # the inference time will be longer for longer forecasts. 
+                # the inference time will be longer for longer forecasts.
                 prediction_length=horizon,
                 # TOTOForecaster draws samples from a predicted parametric distribution. The more samples, the more stable and accurate the prediction.
                 # This is especially important if you care about accurate prediction intervals in the tails.
@@ -174,9 +203,9 @@ class TOTOAdapter:
                 # KV cache should significantly speed up inference, and in most cases should reduce memory usage too.
                 use_kv_cache=self.config.get("use_kv_cache", True),
             )
-            
+
             return forecast_result
-            
+
         except Exception as e:
             self.logger.error(f"TOTO inference failed: {str(e)}")
             raise
@@ -186,3 +215,17 @@ class TOTOAdapter:
         if isinstance(x, np.ndarray):
             return float(x.reshape(-1)[0])  # first element
         return float(x)
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get information about the loaded model."""
+        if not self._model_loaded:
+            return {"status": "not_loaded"}
+
+        checkpoint = self.config.get("checkpoint", "Datadog/Toto-Open-Base-1.0")
+        model_path = os.path.join(self.model_cache_dir, checkpoint.replace("/", "_"))
+
+        return {
+            "status": "loaded",
+            "checkpoint": checkpoint,
+            "device": str(next(self._model.parameters()).device) if self._model else "unknown"
+        }

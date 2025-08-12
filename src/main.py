@@ -7,9 +7,6 @@ from darts import TimeSeries
 import json
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import pandas as pd
 
 from collectors.prometheus import PrometheusCollector
 from optimizers.idle_capacity import IdleCapacityOptimizer
