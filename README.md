@@ -16,9 +16,7 @@ FinOps forecasting agent is an AI-driven forecasting tool that predicts your Kub
 > Helm & K8s deployment files work as-is, just build Docker image, push, and apply deployment.
 > The default value of Helm chart also includes a public image of finops-agent in ghcr and so optionally you can skip docker build & push.
 
-**Note**
 
-- NBEATS & Prophet model adapter specific code will be removed completely.
 
 ## Architecture
 
@@ -34,9 +32,7 @@ forecasting-agent/
 │   │   └── prometheus.py              # Prometheus metrics collector
 │   ├── adapters/
 │   │   ├── forecasting/
-│   │   │   ├── toto_adapter.py        # Datadog TOTO zero-shot model
-│   │   │   ├── nbeats_adapter.py      # NBEATS forecasting model
-│   │   │   └── prophet_adapter.py     # Prophet forecasting model
+│   │   │   └── toto_adapter.py        # Datadog TOTO zero-shot model
 │   │   ├── prometheus_toto_adapter.py # Direct Prometheus to TOTO conversion
 │   │   └── forecast_format_converter.py # Output format conversion
 │   ├── metrics/

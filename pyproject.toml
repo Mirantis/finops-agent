@@ -11,19 +11,11 @@ dependencies = [
     "pandas",
     "numpy",
     "prometheus-api-client",
-    "darts==0.34.0",
-    "scipy<1.16",
     "pyyaml",
     "torch",  # required for Toto model
     "einops", # Toto dataset utilities
     "jaxtyping", # type annotations used in Toto utilities
     "transformers",
-    "boto3==1.34.69",
-    "datasets==2.17.1",
-    "dill==0.3.8",
-    "gluonts[torch]==0.15.1",
-    "rotary-embedding-torch==0.8.6",
-    "tqdm==4.66.3",
 ]
 
 [project.optional-dependencies]

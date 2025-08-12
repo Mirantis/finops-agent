@@ -6,7 +6,7 @@ agent:
 collector:
   type: prometheus
   url: http://localhost:8082
-  lookback_days: 21 
+  lookback_days: 21
   step: "1h"  # Consistent step size for all queries
   disable_ssl: true
   timeout: 300
@@ -18,30 +18,12 @@ models:
   type: toto
   forecast_horizon: 7 # number of days ahead in future
   quantiles: [0.1, 0.5, 0.9]
-  prophet:
-    changepoint_prior_scale: 0.05
-    seasonality_prior_scale: 10.0
-    holidays_prior_scale: 10.0
-    seasonality_mode: multiplicative
-    daily_seasonality: true
-    weekly_seasonality: true
-    yearly_seasonality: true
-    regressors: []  # Optional additional regressors
-  nbeats:
-    input_chunk_length: 24
-    output_chunk_length: 24
-    n_epochs: 50
-    activation: ReLU
-    random_state: 42
-    generic_architecture: true
-    likelihood: "QuantileRegression"
-    # For probabilistic forecasting, you can use 'QuantileRegression', 'Poisson', 'Gaussian', etc.
   toto:
     checkpoint: Datadog/Toto-Open-Base-1.0
     device: cpu              # or cuda
     context_length: 4096
     num_samples: 256
-    compile: True 
+    compile: True
 
 # Optimizer configuration
 optimizer:
@@ -59,23 +41,4 @@ validation:
   enabled: True
   interval_cycles: 2  # Run validation every 5 forecast cycles
   train_ratio: 0.7    # Use 70% for training, 30% for testing
-  log_level: INFO 
-
-# NBEATSModel parameters:
-# input_chunk_length: Number of past time steps used as input.
-# output_chunk_length: Number of future time steps predicted at once.
-# output_chunk_shift: Steps to shift the output chunk into the future (gap between input and output).
-# generic_architecture: True for generic N-BEATS, False for interpretable (trend/seasonality) stacks.
-# num_stacks: Number of stacks in the model (only for generic_architecture=True).
-# num_blocks: Number of blocks per stack.
-# num_layers: Number of fully connected layers per block.
-# layer_widths: Width of each FC layer (int or list of ints, one per stack).
-# expansion_coefficient_dim: Dimensionality of expansion coefficients (generic only).
-# trend_polynomial_degree: Degree of polynomial for trend stack (interpretable only).
-# dropout: Dropout probability in FC layers.
-# activation: Activation function (e.g., 'ReLU', 'LeakyReLU', 'Tanh', etc.).
-# n_epochs: Number of training epochs.
-# random_state: Random seed for reproducibility.
-# likelihood: For probabilistic forecasting (e.g., 'QuantileRegression', 'Poisson', 'Gaussian').
-#
-# See: https://unit8co.github.io/darts/generated_api/darts.models.forecasting.nbeats.html#darts.models.forecasting.nbeats.NBEATSModel 
+  log_level: INFO

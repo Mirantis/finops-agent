@@ -174,3 +174,5 @@ Thumbs.db
 # IDE and editor files
 .vscode/
 .idea/
+
+coding-conventions.md

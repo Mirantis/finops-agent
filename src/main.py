@@ -3,17 +3,16 @@ from typing import Dict, Any, Optional, List
 import yaml
 from datetime import datetime, timedelta, timezone
 import time
-from darts import TimeSeries
+
 import json
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from collectors.prometheus import PrometheusCollector
 from optimizers.idle_capacity import IdleCapacityOptimizer
-from adapters.forecasting.nbeats_adapter import NBEATSAdapter
 from adapters.forecasting.toto_adapter import TOTOAdapter
 from adapters.prometheus_toto_adapter import PrometheusToTotoAdapter
-from adapters.prometheus_timeseries_adapter import PrometheusTimeseriesAdapter
+
 from adapters.forecast_format_converter import ForecastFormatConverter
 from validation.forecast_validator import ForecastValidator
 from metrics.metric_types import MetricTypeClassifier, MetricAggregationLevel
@@ -205,46 +204,6 @@ class ForecastingAgent:
         except Exception as e:
             logger.error(f"Error collecting raw metrics: {str(e)}")
             raise
-    
-    def convert_to_timeseries(self, raw_results: Dict[str, Any]) -> Dict[str, TimeSeries]:
-        """Convert raw Prometheus results to per-cluster TimeSeries."""
-        try:
-            freq = self.config['models'].get('freq', "h")
-            return PrometheusTimeseriesAdapter.prometheus_results_to_timeseries(raw_results, freq=freq)
-        except Exception as e:
-            logger.error(f"Error converting to timeseries: {str(e)}")
-            raise
-    
-    def collect_metrics_timeseries(self) -> Dict[str, TimeSeries]:
-        """Collect metrics and convert to TimeSeries (convenience method)."""
-        raw_results = self.collect_raw_metrics()
-        return self.convert_to_timeseries(raw_results)
-
-    def generate_forecast_NBEATS(self, series: TimeSeries) -> dict:
-        """Generate NBEATS forecast with horizon calculation and JSON formatting."""
-        try:
-            step = self.config['collector'].get('step', 'h')
-            horizon_days = self.config['models'].get('forecast_horizon', 30)
-            if step in ['h', '1h', 'hour']:
-                horizon = horizon_days * 24
-            elif step in ['m', '1m', 'min']:
-                horizon = horizon_days * 24 * 60
-            else:
-                horizon = horizon_days
-                
-            model_config = self.config['models'].get('nbeats', {})
-            adapter = NBEATSAdapter(model_config)
-            adapter.fit(series)
-            
-            likelihood = model_config.get('likelihood', None)
-            num_samples = model_config.get('num_samples', 100) if likelihood else 1
-            quantiles = self.config['models'].get('quantiles', [0.1, 0.5, 0.9])
-            
-            # Use adapter's forecast method with quantiles for JSON formatting
-            return adapter.forecast(horizon, num_samples=num_samples, quantiles=quantiles)
-        except Exception as e:
-            logger.error(f"Error generating NBEATS forecast: {str(e)}")
-            raise
 
     def generate_forecast_TOTO(self, raw_results: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
         """Generate TOTO forecast for all clusters
@@ -388,7 +347,13 @@ class ForecastingAgent:
             if isinstance(metric_results, list):
                 for result in metric_results:
                     if isinstance(result, dict) and 'metric' in result:
-                        cluster_name = result['metric'].get('clusterName')
+                        # Check multiple possible cluster label names
+                        cluster_name = None
+                        for possible_cluster_key in ['cluster', 'clusterName', 'promxyCluster']:
+                            if possible_cluster_key in result['metric']:
+                                cluster_name = result['metric'][possible_cluster_key]
+                                break
+                        
                         if cluster_name:
                             cluster_names.add(cluster_name)
         
@@ -403,7 +368,14 @@ class ForecastingAgent:
                 # Check if this metric has data for the specified cluster
                 for result in metric_results:
                     if isinstance(result, dict) and 'metric' in result:
-                        if result['metric'].get('clusterName') == cluster_name:
+                        # Check multiple possible cluster label names
+                        result_cluster_name = None
+                        for possible_cluster_key in ['cluster', 'clusterName', 'promxyCluster']:
+                            if possible_cluster_key in result['metric']:
+                                result_cluster_name = result['metric'][possible_cluster_key]
+                                break
+                        
+                        if result_cluster_name == cluster_name:
                             metric_names.append(metric_name)
                             break  # Found data for this metric and cluster
         
@@ -499,29 +471,15 @@ class ForecastingAgent:
                     except Exception as e:
                         logger.error(f"TOTO validation failed: {str(e)}")
                 
-                model_type = self.config['models'].get('type', 'nbeats')
+                # Generate TOTO forecasts
+                logger.info("Generating TOTO forecasts ...")
+                cluster_grouped_forecasts = self.generate_forecast_TOTO(raw_results)
                 
-                if model_type == 'toto':
-                    # Raw JSON → Tensors → TOTO forecast → Cluster-grouped format
-                    logger.info("Generating TOTO forecasts ...")
-                    cluster_grouped_forecasts = self.generate_forecast_TOTO(raw_results)
-                    
-                    # Update exported forecasts with cluster-grouped results
-                    for cluster_name, forecast_entries in cluster_grouped_forecasts.items():
-                        exported_forecasts[cluster_name] = forecast_entries
-                        active_clusters.add(cluster_name)
-                        logger.info(f"Generated forecast for cluster: {cluster_name}")
-                        
-                else:
-                    # For NBEATS, fall back to TimeSeries-based approach
-                    if cluster_timeseries is None:
-                        cluster_timeseries = self.collect_metrics_timeseries()
-                    
-                    for cluster, ts in cluster_timeseries.items():
-                        forecast = self.generate_forecast_NBEATS(ts)
-                        exported_forecasts[cluster] = forecast
-                        active_clusters.add(cluster)
-                        logger.info(f"Generated NBEATS forecast for cluster: {cluster}")
+                # Update exported forecasts with cluster-grouped results
+                for cluster_name, forecast_entries in cluster_grouped_forecasts.items():
+                    exported_forecasts[cluster_name] = forecast_entries
+                    active_clusters.add(cluster_name)
+                    logger.info(f"Generated forecast for cluster: {cluster_name}")
                 
                 api_url = f"http://{api_host}:{api_port}/metrics/{{clustername}}"
                 logger.info(f"Forecast metrics updated and available at {api_url}")

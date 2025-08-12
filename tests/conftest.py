@@ -27,10 +27,6 @@ def test_config():
         },
         'models': {
             'forecast_horizon': 7,
-            'prophet': {
-                'changepoint_prior_scale': 0.05,
-                'seasonality_mode': 'multiplicative'
-            }
         },
         'optimizer': {
             'idle_threshold': 0.5,
@@ -45,4 +41,4 @@ def test_config():
         'agent': {
             'interval': 3600
         }
-    } 
+    }
