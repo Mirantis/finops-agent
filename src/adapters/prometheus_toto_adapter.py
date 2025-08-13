@@ -2,12 +2,10 @@
 import logging
 from typing import Dict, Any, List
 import torch
-import pandas as pd
 
 try:
     from toto.data.util.dataset import MaskedTimeseries
 except ImportError:
-    # Mock for testing
     class MaskedTimeseries:
         def __init__(self, series, padding_mask, id_mask, timestamp_seconds, time_interval_seconds):
             self.series = series
@@ -19,7 +17,7 @@ except ImportError:
 
 class PrometheusToTotoAdapter:
     """Convert raw Prometheus JSON to TOTO tensor format."""
-    
+
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
     
@@ -28,22 +26,9 @@ class PrometheusToTotoAdapter:
         prometheus_data: Dict[str, List[Dict[str, Any]]], 
         cluster_name: str
     ) -> MaskedTimeseries:
-        """
-        Convert raw Prometheus data to TOTO MaskedTimeseries format for a specific cluster.
-        
-        Args:
-            prometheus_data: Raw Prometheus query results
-            cluster_name: Name of the cluster to filter for
-            
-        Returns:
-            MaskedTimeseries: TOTO-compatible tensor format
-            
-        Raises:
-            ValueError: If data is empty, malformed, or cluster not found
-        """
+        """Convert raw Prometheus data to TOTO MaskedTimeseries format for a specific cluster."""
         self._validate_input(prometheus_data, cluster_name)
         
-        # Extract cluster-specific data from all metrics
         cluster_data = self._extract_cluster_data(prometheus_data, cluster_name)
         
         if not cluster_data:
@@ -54,7 +39,7 @@ class PrometheusToTotoAdapter:
         for metric_name, metric_values in cluster_data['metrics'].items():
             # Get all unique nodes for this metric
             nodes_for_metric = set(item['node_name'] for item in metric_values)
-            for node_name in sorted(nodes_for_metric):  # Sort for consistent ordering
+            for node_name in sorted(nodes_for_metric):
                 node_metric_combinations.append((metric_name, node_name))
         
         # Convert to tensor format using node-metric combinations
@@ -96,14 +81,13 @@ class PrometheusToTotoAdapter:
             Dict containing 'metrics' (timestamp-value data) and 'node_names' (extracted node names)
         """
         cluster_data = {}
-        node_names = set()  # Track unique node names for this cluster
+        node_names = set()
         
         for metric_name, metric_results in prometheus_data.items():
             metric_values = []
             
             for result in metric_results:
                 try:
-                    # Check if this result is for our target cluster
                     metric_labels = result.get("metric", {})
                     
                     # Check multiple possible cluster label names
@@ -114,17 +98,10 @@ class PrometheusToTotoAdapter:
                             break
                     
                     if result_cluster_name == cluster_name:
-                        # Extract node name with priority: "node" > "nodename" > "instance"
-                        # OpenCost metrics use "node", Kubernetes metrics use "nodename" or "instance"
-                        node_name = (
-                            metric_labels.get("node") or 
-                            metric_labels.get("nodename") or 
-                            metric_labels.get("instance")
-                        )
+                        node_name = metric_labels.get("node")
                         if node_name:
                             node_names.add(node_name)
                         
-                        # Check for required 'values' key - this is malformed data if missing
                         if "values" not in result:
                             raise ValueError(f"Malformed Prometheus data: missing 'values' key in result for {metric_name}")
                         
@@ -158,19 +135,10 @@ class PrometheusToTotoAdapter:
         }
     
     def _build_masked_timeseries(self, cluster_data: Dict[str, List[Dict[str, Any]]], node_metric_combinations: List[tuple]) -> MaskedTimeseries:
-        """
-        Build MaskedTimeseries tensor from cluster data.
-        
-        Args:
-            cluster_data: Dict mapping metric names to list of timestamp-value-node dictionaries
-            
-        Returns:
-            MaskedTimeseries: TOTO-compatible tensor format
-        """
+        """Build MaskedTimeseries tensor from cluster data."""
         if not cluster_data:
             raise ValueError("No cluster data to convert")
         
-        # Get all unique timestamps and sort them
         all_timestamps = set()
         for metric_values in cluster_data.values():
             all_timestamps.update(item['timestamp'] for item in metric_values)
@@ -180,11 +148,9 @@ class PrometheusToTotoAdapter:
             # If we only have one timestamp, assume 1-hour interval
             time_interval = 3600
         else:
-            # Calculate time interval from first two timestamps
             time_interval = sorted_timestamps[1] - sorted_timestamps[0]
         
         # Use passed node-metric combinations to preserve node-specific data
-        # node_metric_combinations is now passed as parameter to avoid duplication
         n_variates = len(node_metric_combinations)
         n_timesteps = len(sorted_timestamps)
         
@@ -207,12 +173,10 @@ class PrometheusToTotoAdapter:
                     
                     series_data[variate_idx, time_idx] = value
                     padding_mask[variate_idx, time_idx] = False
-        
+
         # Build timestamp tensors
         timestamp_tensor = torch.tensor(sorted_timestamps, dtype=torch.int64)
         timestamp_seconds = timestamp_tensor.unsqueeze(0).expand(n_variates, n_timesteps)
-        
-        # Time interval tensor (same for all variates)
         time_interval_seconds = torch.full((n_variates,), time_interval, dtype=torch.int64)
         
         return MaskedTimeseries(

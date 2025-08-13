@@ -3,7 +3,6 @@ from typing import Dict, Any, Optional, List
 import yaml
 from datetime import datetime, timedelta, timezone
 import time
-
 import json
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -12,10 +11,8 @@ from collectors.prometheus import PrometheusCollector
 from optimizers.idle_capacity import IdleCapacityOptimizer
 from adapters.forecasting.toto_adapter import TOTOAdapter
 from adapters.prometheus_toto_adapter import PrometheusToTotoAdapter
-
 from adapters.forecast_format_converter import ForecastFormatConverter
 from validation.forecast_validator import ForecastValidator
-from metrics.metric_types import MetricTypeClassifier, MetricAggregationLevel
 from metrics.promql_queries import get_all_queries
 
 logging.basicConfig(
@@ -46,11 +43,10 @@ def _start_forecast_server(host: str, port: int):
                 logger.warning("Connection to client lost while sending response")
             except Exception as exc:
                 logger.error(f"Failed to send HTTP response: {exc}")
-        
         def _handle_model_stats_endpoint(self):
             try:
                 validation_results = exported_forecasts.get('_validation_results')
-                
+
                 if not validation_results:
                     self._send_json({
                         "status": "no_validation_data",
@@ -58,7 +54,7 @@ def _start_forecast_server(host: str, port: int):
                         "timestamp": datetime.now().isoformat()
                     })
                     return
-                
+
                 if not isinstance(validation_results, dict):
                     self._send_json({
                         "status": "error",
@@ -66,9 +62,9 @@ def _start_forecast_server(host: str, port: int):
                         "timestamp": datetime.now().isoformat()
                     })
                     return
-                
+
                 summary = self._calculate_validation_summary(validation_results)
-                
+
                 self._send_json({
                     "status": "success",
                     "timestamp": datetime.now().isoformat(),
@@ -80,20 +76,20 @@ def _start_forecast_server(host: str, port: int):
                         "format": "toto"
                     }
                 })
-                
+
             except Exception as e:
                 self._send_json({
                     "status": "error",
                     "message": f"Error processing validation data: {str(e)}",
                     "timestamp": datetime.now().isoformat()
                 }, status=500)
-        
+
         def _calculate_validation_summary(self, validation_results):
             cluster_count = len(validation_results)
             clusters_with_errors = 0
             total_metrics = 0
             mape_values = []
-            
+
             for cluster_name, cluster_data in validation_results.items():
                 if isinstance(cluster_data, dict):
                     if "error" in cluster_data:
@@ -105,9 +101,9 @@ def _start_forecast_server(host: str, port: int):
                                 total_metrics += 1
                                 if isinstance(metric_data["mape"], (int, float)):
                                     mape_values.append(metric_data["mape"])
-            
+
             average_mape = sum(mape_values) / len(mape_values) if mape_values else 0
-            
+
             return {
                 "cluster_count": cluster_count,
                 "clusters_with_errors": clusters_with_errors,
@@ -197,8 +193,7 @@ class ForecastingAgent:
         """Collect raw metrics from Prometheus."""
         try:
             end_time = datetime.now(tz=timezone.utc)
-            scrape_step = self.config['collector'].get('step', '5m')
-            start_time = end_time - timedelta(days=self.config['collector'].get('lookback_days', 4))
+            start_time = end_time - timedelta(days=self.config['collector'].get('lookback_days', 2))
             # Get results from PrometheusCollector
             return self.collector.collect_metrics(start_time, end_time, PROMQL)
         except Exception as e:
@@ -210,10 +205,10 @@ class ForecastingAgent:
         - PrometheusToTotoAdapter: converts raw JSON to MaskedTimeseries tensors
         - TOTOAdapter.forecast(): forecasting logic
         - ForecastFormatConverter: transforms TOTO output to cluster-grouped format
-        
+
         Args:
             raw_results: Raw Prometheus query results containing data for all clusters
-            
+
         Returns:
             Dict with cluster-grouped format: {
                 cluster_name: [
@@ -235,12 +230,12 @@ class ForecastingAgent:
         try:
             # Convert raw Prometheus JSON to multi-cluster tensors
             prometheus_to_toto = PrometheusToTotoAdapter()
-            
+
             # Extract cluster names from raw results
             cluster_names = self._extract_cluster_names_from_raw_results(raw_results)
             if not cluster_names:
                 raise ValueError("No clusters found in raw Prometheus results")
-            
+
             # Convert each cluster individually using the existing single-cluster method
             multi_cluster_data = {}
             for cluster_name in cluster_names:
@@ -250,10 +245,9 @@ class ForecastingAgent:
                         prometheus_data=raw_results,
                         cluster_name=cluster_name
                     )
-                    
-                    # Extract metric names from the raw data for this cluster
+
                     metric_names = self._extract_metric_names_for_cluster(raw_results, cluster_name)
-                    
+
                     multi_cluster_data[cluster_name] = {
                         'masked_timeseries': conversion_result['masked_timeseries'],
                         'metric_names': metric_names,
@@ -268,7 +262,7 @@ class ForecastingAgent:
             if not multi_cluster_data:
                 raise ValueError("No clusters could be successfully converted")
             
-            # TOTO forecasting for each cluster 
+            # TOTO forecasting for each cluster
             model_config = self.config['models'].get('toto', {})
             toto_adapter = TOTOAdapter(model_config)
             quantiles = self.config['models'].get('quantiles', [0.1, 0.5, 0.9])
@@ -280,7 +274,7 @@ class ForecastingAgent:
                 
                 # Calculate future steps based on input series time intervals
                 masked_timeseries = cluster_info['masked_timeseries']
-                time_interval_seconds = masked_timeseries.time_interval_seconds[0].item()  # Get interval from first variate
+                time_interval_seconds = masked_timeseries.time_interval_seconds[0].item()
                 
                 # Convert forecast horizon from days to number of timesteps
                 seconds_per_day = 24 * 60 * 60
@@ -377,25 +371,12 @@ class ForecastingAgent:
                         
                         if result_cluster_name == cluster_name:
                             metric_names.append(metric_name)
-                            break  # Found data for this metric and cluster
+                            break
         
         return metric_names
 
     def validate_forecasts(self, raw_prometheus_data: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Dict[str, float]]]:
-        """Validate forecast accuracy using 70/30 train/test split with Prometheus data source.
-        
-        Args:
-            raw_prometheus_data: Raw Prometheus query results. If None, collects fresh data.
-            
-        Returns:
-            Dict containing validation results for all clusters
-            
-        Raises:
-            ValueError: If no valid data is available for validation
-        """
-        
         try:
-            # Collect raw data if not provided
             if raw_prometheus_data is None:
                 logger.info("Collecting fresh Prometheus data for validation...")
                 raw_prometheus_data = self.collect_raw_metrics()
@@ -403,11 +384,9 @@ class ForecastingAgent:
             if not raw_prometheus_data:
                 raise ValueError("No Prometheus data available for validation")
             
-            # Initialize components
             validator = ForecastValidator(train_ratio=0.7)
             prometheus_adapter = PrometheusToTotoAdapter()
             
-            # Get TOTO model configuration
             model_config = self.config['models'].get('toto', {})
             model_config['quantiles'] = self.config['models'].get('quantiles', [0.1, 0.5, 0.9])
             
@@ -425,11 +404,11 @@ class ForecastingAgent:
                 cluster_names
             )
             return validation_results
-            
+
         except Exception as e:
             logger.error(f"Validation failed: {e}")
             raise
-    
+
     def run(self):
         """Run the forecasting agent continuously."""
         global exported_forecasts
@@ -437,12 +416,12 @@ class ForecastingAgent:
         api_port = metrics_conf.get('forecast_api_port', 8081)
         api_host = metrics_conf.get('forecast_api_host', '0.0.0.0')
         _start_forecast_server(api_host, api_port)
-        
+
         # Check if validation is enabled
         enable_validation = self.config.get('validation', {}).get('enabled', False)
         validation_interval = self.config.get('validation', {}).get('interval_cycles', 3)
         cycle_count = 0
-        
+
         while True:
             try:
                 # Check Prometheus health before collecting metrics
@@ -452,29 +431,26 @@ class ForecastingAgent:
                     logger.info("Retrying in 60 seconds...")
                     time.sleep(60)
                     continue
-                
+
                 logger.info("Collecting metrics...")
-                
+
                 # Collect raw Prometheus data
                 raw_results = self.collect_raw_metrics()
-                
+
                 if enable_validation and cycle_count % validation_interval == 0:
                     logger.info("Running forecast validation...")
                     try:
                         validation_results = self.validate_forecasts(raw_results)
                         logger.info("TOTO validation completed successfully")
-                        
-                        # Store validation results for /model endpoint
-                        global exported_forecasts
                         exported_forecasts['_validation_results'] = validation_results
-                        
+
                     except Exception as e:
                         logger.error(f"TOTO validation failed: {str(e)}")
-                
+
                 # Generate TOTO forecasts
                 logger.info("Generating TOTO forecasts ...")
                 cluster_grouped_forecasts = self.generate_forecast_TOTO(raw_results)
-                
+
                 # Update exported forecasts with cluster-grouped results
                 for cluster_name, forecast_entries in cluster_grouped_forecasts.items():
                     exported_forecasts[cluster_name] = forecast_entries

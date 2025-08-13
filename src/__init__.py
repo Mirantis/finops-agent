@@ -1,3 +1,1 @@
-"""
-Forecasting Agent package.
-""" 
+"""Forecasting Agent package."""

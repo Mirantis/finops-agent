@@ -1,7 +1,9 @@
 import numpy as np
 from collections import defaultdict
-from datetime import datetime
 from typing import Dict, Any, List
+import logging
+
+logger = logging.getLogger(__name__)
 
 class IdleCapacityOptimizer:
     """ Generate cost-saving recommendations based on idle capacity.
@@ -61,7 +63,7 @@ class IdleCapacityOptimizer:
                 node_data[node]["cost"].append(last)
 
             if ts_list is None and e.get("timestamps"):
-                ts_list = e["timestamps"]
+                ts_list = e.get("timestamps")
 
         if not ts_list:
             return []

@@ -1,47 +1,19 @@
-"""Validation utilities for TOTO forecasts.
-
-The ForecastValidator is responsible for computing forecast-accuracy metrics
-(MAPE, MAE, RMSE) for each metric/variate within each cluster.
-
-Usage example (inside ForecastingAgent.validate_forecasts):
-
-    validator = ForecastValidator(train_ratio=0.7)
-    results = validator.validate(
-        raw_prometheus_data,
-        prometheus_adapter,
-        toto_model_config,
-        cluster_names
-    )
-"""
+"""Validation utilities for TOTO forecasts."""
 from __future__ import annotations
 
 from typing import Dict, Any, List, Optional
-
 import logging
-
 import numpy as np
 import torch
 
 from adapters.forecasting.toto_adapter import TOTOAdapter
-from toto.data.util.dataset import MaskedTimeseries  # type: ignore
+from toto.data.util.dataset import MaskedTimeseries
 
 logger = logging.getLogger(__name__)
 
 
 class ForecastValidator:
-    """Compute accuracy metrics for TOTO forecasts.
-
-    The validator splits the available history for **each variate** as follows:
-
-    1. Take the first half of the timeline.
-    2. Within that half, use the first ``train_ratio`` portion (default 70 %)
-       as the *context* fed to the model.
-    3. Predict the remaining portion of that half and compare with ground
-       truth from the raw data.
-
-    This deliberately small evaluation window keeps runtime low whilst
-    providing a representative score for model performance.
-    """
+    """Compute accuracy metrics for TOTO forecasts."""
 
     def __init__(self, train_ratio: float = 0.7):
         if not 0 < train_ratio < 1:
@@ -95,9 +67,9 @@ class ForecastValidator:
         toto_adapter: TOTOAdapter,
         model_config: Dict[str, Any],
     ) -> Dict[str, Dict[str, float]]:
-        """Validate a *single* cluster across all variates."""
+        """Validate a single cluster across all variates."""
         n_timesteps = mts.series.shape[1]
-        if n_timesteps < 4:  # need at least 4 points to split in half then 70/30
+        if n_timesteps < 4:
             raise ValueError("Insufficient history (need >=4 timesteps)")
 
         half_len = n_timesteps // 2
@@ -121,14 +93,12 @@ class ForecastValidator:
             mts.time_interval_seconds,
         )
 
-        # --- Forecast -----------------------------------------------------
         forecast = toto_adapter.forecast(
             mts_train, horizon=horizon, quantiles=model_config.get("quantiles"), variate_metadata=variate_metadata
         )
         # use median (q0.50) if available else mean of samples
         preds = self._extract_point_forecast(forecast)
 
-        # --- Ground truth --------------------------------------------------
         actual_slice = mts.series[:, train_len:train_len + horizon]
         scores: Dict[str, Dict[str, float]] = {}
         for idx, meta in enumerate(variate_metadata):
@@ -163,7 +133,6 @@ class ForecastValidator:
             n_variates = len(forecast_dict["series"])
             preds = np.zeros((n_variates, horizon), dtype=np.float32)
             for idx, (var_id, entry) in enumerate(forecast_dict["series"].items()):
-                # prefer q0.50, fall back to mean of samples
                 if "q0.50" in entry["quantiles"]:
                     preds[idx] = np.array(entry["quantiles"]["q0.50"], dtype=np.float32)
                 else:

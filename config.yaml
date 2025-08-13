@@ -27,8 +27,8 @@ models:
 
 # Optimizer configuration
 optimizer:
-  idle_cpu_threshold: 0.5
-  idle_mem_threshold: 0.5
+  idle_cpu_threshold: 0.3
+  idle_mem_threshold: 0.3
   min_node_savings: 1
 
 # Metrics configuration

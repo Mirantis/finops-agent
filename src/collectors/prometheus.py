@@ -12,13 +12,7 @@ class PrometheusCollector:
     """Prometheus metrics collector."""
     
     def __init__(self, config: Dict[str, Any]):
-        """Initialize Prometheus collector.
-        
-        Args:
-            config: Configuration dictionary
-        """
         self.config = config
-        
         self.timeout = config.get('timeout', 300)
         self.max_retries = config.get('max_retries', 3)
         self.chunk_threshold_days = config.get('chunk_days', 1)
@@ -32,14 +26,11 @@ class PrometheusCollector:
         self.last_collection: Optional[datetime] = None
         self.node_mapping: Dict[str, str] = {}
         logger.info(f"Initialized PrometheusCollector with URL: {config['url']}")
-        
 
     def _execute_query(self, promql: str, start_time: datetime, end_time: datetime):
-        
         start = start_time.astimezone(timezone.utc).replace(tzinfo=None)
         end = end_time.astimezone(timezone.utc).replace(tzinfo=None)
         
-        # Calculate time range duration
         duration = end - start
         duration_days = duration.total_seconds() / (24 * 3600)
         
@@ -49,11 +40,9 @@ class PrometheusCollector:
             return self._execute_single_query(promql, start, end)
     
     def _get_step_size(self) -> str:
-        """Get step size from configuration."""
         return self.config.get('step', '1h')
     
     def _execute_single_query(self, promql: str, start: datetime, end: datetime):
-        """Execute single query with retry logic and exponential backoff."""
         step = self._get_step_size()
         
         for attempt in range(self.max_retries):
@@ -79,7 +68,6 @@ class PrometheusCollector:
                     raise
     
     def _execute_chunked_query(self, promql: str, start: datetime, end: datetime):
-        """Execute query in chunks for large time range."""
         chunk_size = timedelta(days=self.chunk_threshold_days)
         all_results = []
         current_start = start
@@ -96,7 +84,6 @@ class PrometheusCollector:
                 
             except Exception as e:
                 logger.error(f"Chunk {chunk_count} failed: {str(e)}")
-                # Continue with other chunks rather than failing completely
                 continue
             
             current_start = current_end
@@ -105,20 +92,7 @@ class PrometheusCollector:
         return all_results
 
     def collect_metrics(self, start_time: datetime, end_time: datetime, promq: Dict[str, str]) -> Dict[str, list]:
-        """
-        Collect multiple Prometheus metrics and return the Prometheus query
-        results
-
-        Args:
-            start_time: Start of the query range (datetime)
-            end_time: End of the query range (datetime)
-            promq: Mapping from a friendly metric key to the PromQL query string
-
-        Returns:
-            Dict[str, list]: A dictionary whose keys are the provided ``metric_key``
-            values and whose values are the normalized result lists.
-        """
-        # Check if node normalization is enabled
+        """Collect multiple Prometheus metrics and return the Prometheus query results."""
         if not self.config.get('node_normalization', {}).get('enabled', True):
             logger.info("Node normalization is disabled, collecting metrics without normalization")
             return self._collect_raw_metrics(start_time, end_time, promq)
@@ -141,17 +115,7 @@ class PrometheusCollector:
         return normalized_results
     
     def _collect_raw_metrics(self, start_time: datetime, end_time: datetime, promq: Dict[str, str]) -> Dict[str, list]:
-        """
-        Collect raw metrics without normalization (internal method).
-        
-        Args:
-            start_time: Start of the query range (datetime)
-            end_time: End of the query range (datetime)
-            promq: Mapping from metric key to PromQL query string
-            
-        Returns:
-            Dict[str, list]: Raw metrics without normalization
-        """
+        """Collect raw metrics without normalization."""
         results: Dict[str, list] = {}
         for metric_key, promql in promq.items():
             try:
@@ -161,7 +125,6 @@ class PrometheusCollector:
                 logger.error(f"Error collecting metric '{metric_key}': {e}")
                 continue
 
-        # If every metric returned an empty result set treat it as a failure
         if not results or all(len(v) == 0 for v in results.values()):
             raise ValueError("No metrics data collected from Prometheus.")
 
@@ -170,19 +133,12 @@ class PrometheusCollector:
         return results
 
     def load_node_mappings(self, start_time: datetime, end_time: datetime) -> None:
-        """Load node name mappings from kube_node_info metric.
-        
-        Args:
-            start_time: Start time for the query
-            end_time: End time for the query
-        """
-        # Check if node normalization is enabled
+        """Load node name mappings from kube_node_info metric."""
         if not self.config.get('node_normalization', {}).get('enabled', True):
             logger.info("Node normalization is disabled")
             return
         
         try:
-            # Get query from config or use default
             kube_node_info_query = self.config.get('node_normalization', {}).get('kube_node_info_query', 'kube_node_info')
             kube_node_info_data = self._execute_query(kube_node_info_query, start_time, end_time)
             
@@ -190,7 +146,6 @@ class PrometheusCollector:
                 self.node_mapping = create_node_mapping(kube_node_info_data)
                 logger.info("Successfully loaded node mappings")
                 
-                # Log mapping stats if enabled
                 if self.config.get('node_normalization', {}).get('log_mapping_stats', False):
                     logger.info(f"Node mapping stats: {len(self.node_mapping)} mappings loaded")
             else:
@@ -201,28 +156,16 @@ class PrometheusCollector:
             logger.warning("Node normalization will be disabled")
 
     def get_available_metrics(self) -> List[str]:
-        """Get list of available Prometheus metrics.
-
-        Returns:
-            List of available metric names
-        """
-        metrics = []
+        """Get list of available Prometheus metrics."""
         try:
-            # Query Prometheus for all available metrics
-            metrics = self.prom.all_metrics()
+            return self.prom.all_metrics()
         except Exception as e:
-            print(f"Error getting available metrics: {str(e)}")
-
-        return metrics
+            logger.error(f"Error getting available metrics: {str(e)}")
+            return []
 
     def health_check(self) -> Dict[str, Any]:
-        """Check Prometheus collector health.
-
-        Returns:
-            Dictionary with health status and details
-        """
+        """Check Prometheus collector health."""
         try:
-
             self.prom.check_prometheus_connection()
             status = "healthy"
         except Exception as e:

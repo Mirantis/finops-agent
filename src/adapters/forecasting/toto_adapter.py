@@ -1,6 +1,7 @@
 import logging
 from typing import List, Dict, Optional, Any
 import time
+import os
 
 import numpy as np
 import torch
@@ -28,8 +29,6 @@ class TOTOAdapter:
             device = self.config.get("device", "cpu")
 
             self.logger.info(f"Loading TOTO model: {checkpoint}")
-
-            # Always download model from Hugging Face (no caching for now)
             self.logger.info(f"Downloading TOTO model: {checkpoint}")
             self._model = Toto.from_pretrained(checkpoint).to(device)
 
@@ -43,7 +42,6 @@ class TOTOAdapter:
 
         except Exception as e:
             self.logger.error(f"Failed to load TOTO model: {str(e)}")
-            # Reset state
             self._model = None
             self._forecaster = None
             self._model_loaded = False
@@ -114,8 +112,7 @@ class TOTOAdapter:
             elif 'cost_usd_' in mname:
                 transformed_series[idx] = torch.log1p(torch.clamp_min(transformed_series[idx], 0.0))
                 transform_types[idx] = 'log'
-        # create a new MaskedTimeseries with transformed values
-        from toto.data.util.dataset import MaskedTimeseries
+        
         series_scaled = MaskedTimeseries(
             transformed_series,
             series.padding_mask,
@@ -124,7 +121,6 @@ class TOTOAdapter:
             series.time_interval_seconds,
         )
 
-        # Run TOTO inference
         forecast_result = self._run_toto_inference(series_scaled, horizon)
 
         # Generate future timestamps
@@ -187,7 +183,6 @@ class TOTOAdapter:
             raise RuntimeError("TOTO model not loaded. Call _ensure_model_loaded() first.")
 
         try:
-            # Run forecast using pre-loaded model
             forecast_result = self._forecaster.forecast(
                 masked_timeseries,
                 # We can set any number of timesteps into the future that we'd like to forecast. Because Toto is an autoregressive model,
@@ -213,7 +208,7 @@ class TOTOAdapter:
     def _to_scalar(self, x):
         """Return plain float from numpy/PyTorch scalar or array."""
         if isinstance(x, np.ndarray):
-            return float(x.reshape(-1)[0])  # first element
+            return float(x.reshape(-1)[0])
         return float(x)
 
     def get_model_info(self) -> Dict[str, Any]:
