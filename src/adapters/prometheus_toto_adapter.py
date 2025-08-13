@@ -156,7 +156,8 @@ class PrometheusToTotoAdapter:
         
         # Initialize tensors
         series_data = torch.zeros((n_variates, n_timesteps), dtype=torch.float32)
-        padding_mask = torch.full((n_variates, n_timesteps), True, dtype=torch.bool)
+        # padding_mask False = padding/missing, True = valid
+        padding_mask = torch.full((n_variates, n_timesteps), False, dtype=torch.bool)
         id_mask = torch.zeros((n_variates, n_timesteps), dtype=torch.float32)
         
         timestamp_to_idx = {ts: idx for idx, ts in enumerate(sorted_timestamps)}
@@ -172,7 +173,7 @@ class PrometheusToTotoAdapter:
                     time_idx = timestamp_to_idx[timestamp]
                     
                     series_data[variate_idx, time_idx] = value
-                    padding_mask[variate_idx, time_idx] = False
+                    padding_mask[variate_idx, time_idx] = True
 
         # Build timestamp tensors
         timestamp_tensor = torch.tensor(sorted_timestamps, dtype=torch.int64)

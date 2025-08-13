@@ -21,6 +21,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def _gpu_sanity_check():
+    try:
+        import torch  # noqa
+        if not torch.cuda.is_available():
+            raise RuntimeError(
+                "Found no NVIDIA driver on your system. Please check that you have an NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx"
+            )
+    except Exception as e:
+        logging.getLogger("TOTOAdapter").error(f"Failed to load TOTO model: {str(e)}")
+        logger.error(f"Error in main loop: {str(e)}")
+        raise
+
 PROMQL = get_all_queries()
 
 exported_forecasts: Dict[str, Dict[str, Any]] = {}
@@ -483,6 +495,24 @@ def main():
     parser = argparse.ArgumentParser(description='Forecasting Agent')
     parser.add_argument('--config', required=True, help='Path to configuration file')
     args = parser.parse_args()
+    
+    try:
+        with open(args.config, 'r') as _f:
+            _cfg = yaml.safe_load(_f)
+        device_opt = (
+            _cfg.get('models', {})
+                .get('toto', {})
+                .get('device', '')
+        )
+        if isinstance(device_opt, str) and device_opt.lower().startswith('cuda'):
+            try:
+                _gpu_sanity_check()
+            except Exception:
+                time.sleep(60)
+                # continue startup; downstream retry logic remains in place
+    except Exception:
+        # If config cannot be read, proceed; errors will surface later
+        pass
     
     agent = ForecastingAgent(args.config)
     try:
