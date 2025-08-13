@@ -199,8 +199,8 @@ class ForecastingAgent:
             end_time = datetime.now(tz=timezone.utc)
             scrape_step = self.config['collector'].get('step', '5m')
             start_time = end_time - timedelta(days=self.config['collector'].get('lookback_days', 4))
-            # Get raw results from PrometheusCollector
-            return self.collector.collect_metrics_timeseries(start_time, end_time, PROMQL)
+            # Get results from PrometheusCollector
+            return self.collector.collect_metrics(start_time, end_time, PROMQL)
         except Exception as e:
             logger.error(f"Error collecting raw metrics: {str(e)}")
             raise

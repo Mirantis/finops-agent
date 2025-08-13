@@ -16,6 +16,9 @@ dependencies = [
     "einops", # Toto dataset utilities
     "jaxtyping", # type annotations used in Toto utilities
     "transformers",
+    "gluonts[torch]==0.15.1",  # required by TOTO model
+    "rotary-embedding-torch==0.8.6",  # required by TOTO model
+    "tqdm==4.66.3",  # required by TOTO model
 ]
 
 [project.optional-dependencies]

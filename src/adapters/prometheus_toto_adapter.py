@@ -105,7 +105,15 @@ class PrometheusToTotoAdapter:
                 try:
                     # Check if this result is for our target cluster
                     metric_labels = result.get("metric", {})
-                    if metric_labels.get("clusterName") == cluster_name:
+                    
+                    # Check multiple possible cluster label names
+                    result_cluster_name = None
+                    for possible_cluster_key in ['cluster', 'clusterName', 'promxyCluster']:
+                        if possible_cluster_key in metric_labels:
+                            result_cluster_name = metric_labels[possible_cluster_key]
+                            break
+                    
+                    if result_cluster_name == cluster_name:
                         # Extract node name with priority: "node" > "nodename" > "instance"
                         # OpenCost metrics use "node", Kubernetes metrics use "nodename" or "instance"
                         node_name = (

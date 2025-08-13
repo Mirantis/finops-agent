@@ -6,7 +6,7 @@ agent:
 collector:
   type: prometheus
   url: http://localhost:8082
-  lookback_days: 21
+  lookback_days: 7
   step: "1h"  # Consistent step size for all queries
   disable_ssl: true
   timeout: 300
@@ -16,7 +16,7 @@ collector:
 # Model configuration
 models:
   type: toto
-  forecast_horizon: 7 # number of days ahead in future
+  forecast_horizon: 3 # number of days ahead in future
   quantiles: [0.1, 0.5, 0.9]
   toto:
     checkpoint: Datadog/Toto-Open-Base-1.0
@@ -42,3 +42,10 @@ validation:
   interval_cycles: 2  # Run validation every 5 forecast cycles
   train_ratio: 0.7    # Use 70% for training, 30% for testing
   log_level: INFO
+
+# Node normalization configuration
+node_normalization:
+  enabled: True
+  kube_node_info_query: "kube_node_info"  # Query to get node mappings
+  fallback_to_original: True  # Return original name if no mapping found
+  log_mapping_stats: True  # Log mapping statistics for debugging
