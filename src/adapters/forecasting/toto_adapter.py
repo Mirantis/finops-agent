@@ -5,9 +5,18 @@ import os
 
 import numpy as np
 import torch
+from functools import lru_cache
 from toto.data.util.dataset import MaskedTimeseries
 from toto.inference.forecaster import TotoForecaster
 from toto.model.toto import Toto
+
+@lru_cache(maxsize=None)
+def _get_cached_toto_model(checkpoint: str, device: str, compile_model: bool):
+    normalized_device = str(torch.device(device))
+    model = Toto.from_pretrained(checkpoint).to(normalized_device)
+    if compile_model:
+        model.compile()
+    return model
 
 class TOTOAdapter:
     """Adapter for Datadog's TOTO zero-shot forecasting model."""
@@ -27,14 +36,10 @@ class TOTOAdapter:
         try:
             checkpoint = self.config.get("checkpoint", "Datadog/Toto-Open-Base-1.0")
             device = self.config.get("device", "cpu")
+            compile_model = self.config.get("compile", True)
 
-            self.logger.info(f"Loading TOTO model: {checkpoint}")
-            self.logger.info(f"Downloading TOTO model: {checkpoint}")
-            self._model = Toto.from_pretrained(checkpoint).to(device)
-
-            if self.config.get("compile", True):
-                self.logger.info("Compiling model...")
-                self._model.compile()
+            self.logger.info(f"Loading TOTO model (cached): {checkpoint} on {device}")
+            self._model = _get_cached_toto_model(checkpoint, device, compile_model)
 
             self._forecaster = TotoForecaster(self._model.model)
             self._model_loaded = True
