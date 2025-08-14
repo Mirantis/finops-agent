@@ -1,6 +1,6 @@
 # FinOps Agent
 
-FinOps forecasting agent is an AI-driven forecasting tool that predicts your Kubernetes costs and resource usage and then gives you actionable savings recommendations.
+The FinOps Agent is an AI-powered forecasting tool with deterministic optimization algorithms to provide recommendations for cloud infrastructure cost & resource usage reduction.
 
 ## Key Value Props
 

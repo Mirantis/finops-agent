@@ -71,6 +71,8 @@ class IdleCapacityOptimizer:
         # Compute horizon in days
         horizon_sec = (ts_list[-1] - ts_list[0]) / 1000.0
         horizon_days = round(horizon_sec / (3600 * 24))
+        if horizon_days <= 0:
+            return []
 
         # Find candidate nodes
         candidates: Dict[str, float] = {}
@@ -88,9 +90,17 @@ class IdleCapacityOptimizer:
 
         if not candidates:
             return []
+        worker_node_count = len(node_data)
+        if worker_node_count <= 1:
+            return []
+        # Respect minimum removable nodes threshold
+        if len(candidates) < self.min_node_savings:
+            return []
 
         # Pick the best node to remove
         node_to_drop, savings = max(candidates.items(), key=lambda kv: kv[1])
+        if savings <= 0:
+            return []
 
         rec = {
             "cluster": cluster,
