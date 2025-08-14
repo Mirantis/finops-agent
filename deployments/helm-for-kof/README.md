@@ -1,76 +1,66 @@
-# FinOps Agent – Helm Chart
+# FinOps Agent – Helm Chart for KOF
 
-Deploy **FinOps Agent** on k0rdent clusters (with KOF).
+Deploy FinOps Agent on k0rdent clusters (with KOF) using a Helm chart and k0rdent-native resources.
 
 ## Requirements
 
-* k0rdent cluster with KOF enabled  
-* Prometheus endpoint reachable from FinOps Agent  
-* Helm 3.10 +
+- k0rdent cluster with KOF enabled
+- Prometheus endpoint reachable from FinOps Agent
+- Helm 3.10+
+- **Grafana Infinity plugin v3.4.1** manually installed in KOF Grafana instance
 
 ---
 
-## TL;DR — Quick Install
+## TL;DR — Package, Push, Deploy
 
 ```bash
-helm repo add finops-agent <repo-url>
-helm repo update
-helm install finops-agent finops-agent/finops-agent \
-  --namespace finops --create-namespace
+# From repo root, package the KOF chart
+helm package deployments/helm-for-kof
+
+# Optional: push to your OCI registry
+export HELM_EXPERIMENTAL_OCI=1
+helm push finops-agent-kof-0.1.1.tgz oci://ghcr.io/<org>/charts
+
+# Apply k0rdent resources (HelmRepository, ServiceTemplate, MultiClusterService)
+kubectl apply -k deployments/k0rdent-service-template
+
+# Verify ServiceTemplate is valid
+kubectl get servicetemplate -n kcm-system
 ```
 
-The chart:
+## Important Setup Note
 
-* Installs **FinOps Agent** in **`finops`**  
-* Adds an **Infinity** datasource in **`finops`**  
-* Publishes the **Forecasting Dashboard** to Grafana in **`kof`**
+The FinOps Agent dashboards require the **Grafana Infinity plugin v3.4.1** to function properly. Since k0rdent/KOF manages Grafana via its own configuration, you'll need to manually install this plugin in your KOF Grafana instance.
 
-> **Why two namespaces?**  
-> KOF conventionally hosts Grafana and shared dashboards in `kof`; FinOps Agent and its datasource live with your workloads in `finops`.
+To install the plugin in KOF Grafana:
+1. Access your KOF Grafana instance
+2. Go to Administration → Plugins
+3. Search for "Infinity" 
+4. Install yesoreyeram-infinity-datasource v3.4.1
+
+Apply the k0rdent resources (HelmRepository, ServiceTemplate, MultiClusterService) here: [k0rdent-service-template](../k0rdent-service-template/README.md)
 
 ---
 
-## What You Get
+## Customize
 
-| Component | Purpose |
-|-----------|---------|
-| **FinOps Agent** | Scrapes Prometheus, runs TOTO models, emits forecast metrics |
-| **Grafana Datasource** | Connects Grafana to FinOps Agent’s `/metrics` API |
-| **Forecasting Dashboard** | Visualises cost & resource forecasts at node and cluster level |
+Edit `deployments/helm-for-kof/values.yaml` to override defaults (image, Prometheus URL, model settings, Grafana dashboard labels, etc.).
 
-Key panels include: hourly cost, CPU / memory utilisation, node count, and optimisation hints—each at **node** and **cluster** granularity.
+If you pushed to your own registry, update:
+- `deployments/k0rdent-service-template/helm-repo.yaml` → `.spec.url`
+- `deployments/k0rdent-service-template/service-template.yaml` → `.spec.helm.chartSpec.chart` and `version`
 
 
-## Common Tasks
-
-### Upgrade
+## Upgrade / Uninstall (via Helm, if installing directly)
 
 ```bash
-helm upgrade finops-agent finops-agent/finops-agent \
-  --namespace finops
-```
+# Upgrade
+helm upgrade --install finops-agent oci://ghcr.io/<org>/charts/finops-agent-kof -n finops
 
-### Uninstall
-
-```bash
+# Uninstall
 helm uninstall finops-agent -n finops
 ```
 
----
+## Support
 
-## Customising
-
-Create `values.yaml` to override defaults.
-
-Then:
-
-```bash
-helm upgrade --install finops-agent finops-agent/finops-agent \
-  -f values.yaml -n finops
-```
-
----
-
-## Support  
-
-Open an issue in the [GitHub repo](https://github.com/ramessesii2/mr-finops-agent).
+Open an issue in the project repository.

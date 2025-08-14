@@ -10,22 +10,24 @@ FinOps forecasting agent is an AI-driven forecasting tool that predicts your Kub
 
 3. Recommendations – Automatically spot idle nodes and estimate exact dollar-savings.
 
-4. Plug & Play – Configure in helm/values.yaml, Helm does the rest; integrate via simple JSON APIs.
+4. Plug & Play – Configure in deployments/helm-standalone/values.yaml, Helm does the rest; integrate via simple JSON APIs.
 
 > In development
-> Helm & K8s deployment files work as-is, just build Docker image, push, and apply deployment.
 > The default value of Helm chart also includes a public image of finops-agent in ghcr and so optionally you can skip docker build & push.
-
-
 
 ## Architecture
 
-![Architecture](./docs/architecture.png)
+![Architecture](./docs/arch-mermaid.png)
+
+## Data Flow
+
+![Data Flow](./docs/arch-dataflow.png)
 
 ## Project Structure
 
 ```bash
-forecasting-agent/
+finops-agent/
+├── config.yaml                        # Main configuration file
 ├── src/
 │   ├── main.py                        # Main application entry point
 │   ├── collectors/
@@ -36,18 +38,23 @@ forecasting-agent/
 │   │   ├── prometheus_toto_adapter.py # Direct Prometheus to TOTO conversion
 │   │   └── forecast_format_converter.py # Output format conversion
 │   ├── metrics/
-│   │   ├── metric_types.py            # Metric classification
 │   │   └── promql_queries.py          # PromQL query definitions
 │   ├── validation/
 │   │   └── forecast_validator.py      # Model accuracy validation
+│   ├── utils/
+│   │   └── node_normalizer.py         # Node name normalizer
 │   └── optimizers/
 │       └── idle_capacity.py           # Cost optimization logic
 ├── toto/                              # Upstream Datadog/Toto utility code
 │   └── ...                            # TOTO model utilities and helpers
-├── config.yaml                        # Main configuration file
-├── deployments/
-│   └── kubernetes/
-│       └── deployment.yaml            # Kubernetes deployment
+├── deployments/helm-standalone/
+│   └── values.yaml                    # Helm values file
+├── deployments/helm-for-kof/
+│   └── values.yaml                    # Helm values file for KOF
+├── deployments/kubernetes/
+│   └── deployment.yaml                # Kubernetes deployment
+├── deployments/k0rdent-service-template/
+│   └── service-template.yaml          # k0rdent service template
 └── docs/
     ├── architecture.png               # Architecture diagram
     ├── appendix.md                    # Additional documentation
@@ -88,21 +95,69 @@ docker buildx build --platform linux/amd64,linux/arm64 \
   --push .
 ```
 
-#### 🔍 Troubleshooting Builds
+### K0rdent + KOF (Recommended)
+
+Deploy via k0rdent-native resources i.e., HelmRepository, ServiceTemplate, MultiClusterService.
+
+1 Package the Helm chart
 
 ```bash
-# Check buildx availability
-docker buildx version
+helm package deployments/helm-for-kof
 
-# Set up buildx if needed
-docker buildx create --use
-
-# Inspect builder
-docker buildx inspect --bootstrap
-
-# Clean build cache
-docker buildx prune -f
+export HELM_EXPERIMENTAL_OCI=1
+helm push finops-agent-kof-0.1.1.tgz oci://ghcr.io/<org>/charts
 ```
+
+2 Set HelmRepository, ServiceTemplate, MCS in `deployments/k0rdent-service-template`
+
+2.a Apply the HelmRepository, ServiceTemplate `deployments/k0rdent-service-template`
+
+```bash
+kubectl apply -f deployments/k0rdent-service-template/helm-repo.yaml
+kubectl apply -f deployments/k0rdent-service-template/service-template.yaml
+```
+
+2.b Verify ServiceTemplate is valid
+
+```bash
+kubectl get servicetemplate -n kcm-system
+```
+
+3 Apply the MultiClusterService resource
+
+```bash
+kubectl apply -f deployments/k0rdent-service-template/mcs.yaml
+```
+
+The `MultiClusterService` targets clusters with these labels and deploys FinOps Agent automatically:
+
+```yaml
+k0rdent.mirantis.com/management-cluster: "true"
+sveltos-agent: present
+```
+
+4 Verify the resources are available
+
+4.a Verify the MCS is applied
+
+```bash
+kubectl get mcs -n kcm-system
+```
+
+4.b Verify the FinOps Agent is deployed
+
+```bash
+kubectl get pod -n finops
+```
+
+4.c Verify that the Grafana resources are available
+
+```bash
+kubectl get grafanadashboard -n kof
+kubectl get grafanadatasource -n finops
+```
+
+Read more about [k0rdent-service-template](./deployments/k0rdent-service-template/README.md)
 
 ### Kubernetes
 
@@ -120,23 +175,20 @@ kubectl apply -f deployments/kubernetes/deployment.yaml
 pdm install
 
 # Run directly
-PYTHONPATH=src pdm run python -m forecasting_agent.main config.yaml
-
-# Or with debugging
-PYTHONPATH=src pdm run python -m debugpy --listen 5678 --wait-for-client -m forecasting_agent.main config.yaml
+PYTHONPATH=.:src pdm run python src/main.py --config config.yaml
 ```
 
-### Helm
+### Standalone Helm (single cluster)
 
 ```bash
 # Install FinOps Agent using Helm chart
-helm install finops-agent ./helm
+helm install finops-agent ./deployments/helm-standalone
 
 # Install in specific namespace
-helm install finops-agent ./helm --namespace finops --create-namespace
+helm install finops-agent ./deployments/helm-standalone --namespace finops --create-namespace
 
 # Install with custom Prometheus URL
-helm install finops-agent ./helm \
+helm install finops-agent ./deployments/helm-standalone \
   --set config.collector.url=http://your-prometheus:9090
 ```
 
@@ -170,27 +222,29 @@ agent:
 collector:
   type: prometheus
   url: http://localhost:8082
+  lookback_days: 7
+  step: "1h"  # Consistent step size for all queries
   disable_ssl: true
-  lookback_days: 4
-  step: "30m"
   timeout: 300
   max_retries: 3
+  chunk_days: 0.25  # 6 hours for better granular processing, and so 1 for 24 hours
 
 # Model configuration
 models:
   type: toto
-  forecast_horizon: 7  # days ahead
+  forecast_horizon: 3 # number of days ahead in future
   quantiles: [0.1, 0.5, 0.9]
-
   toto:
     checkpoint: Datadog/Toto-Open-Base-1.0
-    device: cpu  # or cuda
+    device: cpu              # or cuda
     context_length: 4096
     num_samples: 256
+    compile: True
+
 # Optimizer configuration
 optimizer:
-  idle_cpu_threshold: 0.5
-  idle_mem_threshold: 0.5
+  idle_cpu_threshold: 0.3
+  idle_mem_threshold: 0.3
   min_node_savings: 1
 
 # Metrics configuration
@@ -204,11 +258,18 @@ validation:
   interval_cycles: 2  # Run validation every 5 forecast cycles
   train_ratio: 0.7    # Use 70% for training, 30% for testing
   log_level: INFO
+
+# Node normalization configuration
+node_normalization:
+  enabled: True
+  kube_node_info_query: "kube_node_info"  # Query to get node mappings
+  fallback_to_original: True  # Return original name if no mapping found
+  log_mapping_stats: True  # Log mapping statistics for debugging
 ```
 
 ## API Endpoints
 
-HTTP API available at `http://localhost:8081`:
+HTTP API available at `http://localhost:8081`
 
 ### Get Cluster Forecasts
 
@@ -409,21 +470,6 @@ See above section `Get Available stats about cluster & model`
 - Increase `lookback_days` for more training data
 - Adjust `forecast_horizon` to shorter periods
 - Check data quality and missing values
-
-## 📈 Monitoring
-
-The agent provides comprehensive logging:
-
-```bash
-# View real-time logs
-tail -f forecasting-agent.log
-
-# Filter for validation results
-grep "MAPE" forecasting-agent.log
-
-# Monitor health checks
-grep "health check" forecasting-agent.log
-```
 
 ## License
 

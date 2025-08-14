@@ -5,6 +5,7 @@ A Helm chart for deploying FinOps Agent - a Financial Operations Forecasting Age
 ## Overview
 
 FinOps Agent is a forecasting application that:
+
 - Collects metrics from Prometheus
 - Uses TOTO models for forecasting
 - Provides cost optimization recommendations
@@ -19,21 +20,23 @@ FinOps Agent is a forecasting application that:
 ## Installation
 
 ### Add the repository
+
 ```bash
 helm repo add finops-agent <repository-url>
 helm repo update
 ```
 
 ### Install the chart
+
 ```bash
 # Install with default values
-helm install finops-agent ./helm
+helm install finops-agent .
 
 # Install with custom values
-helm install finops-agent ./helm -f custom-values.yaml
+helm install finops-agent . -f custom-values.yaml
 
 # Install in a specific namespace
-helm install finops-agent ./helm --namespace finops --create-namespace
+helm install finops-agent . --namespace finops --create-namespace
 ```
 
 ## Configuration
@@ -60,13 +63,15 @@ The following table lists the configurable parameters and their default values:
 ## Examples
 
 ### Basic Installation
+
 ```bash
-helm install my-finops-agent ./helm
+helm install my-finops-agent .
 ```
 
 ### Installation with Custom Configuration
+
 ```bash
-helm install finops-agent ./helm \
+helm install finops-agent . \
   --set replicaCount=2 \
   --set config.collector.url=http://my-prometheus:9090 \
   --set resources.requests.cpu=200m \
@@ -82,21 +87,24 @@ This Helm chart includes a bundled Grafana instance with pre-configured dashboar
 ### Accessing Grafana
 
 #### 1. Deploy with Grafana Enabled (Default)
+
 ```bash
 # Grafana is enabled by default
-helm install finops-agent ./helm
+helm install finops-agent .
 
 # Or explicitly enable Grafana
-helm install finops-agent ./helm --set grafana.enabled=true
+helm install finops-agent . --set grafana.enabled=true
 ```
 
 #### 2. Port Forward to Access Grafana UI
+
 ```bash
 # Forward local port 3001 to Grafana service port 3001
 kubectl port-forward service/finops-agent-grafana 3001:3001
 ```
 
 #### 3. Access Dashboard
+
 - **URL**: http://localhost:3001
 - **Username**: `admin`
 - **Password**: `finops123`
@@ -106,12 +114,14 @@ kubectl port-forward service/finops-agent-grafana 3001:3001
 The **Forecasting Dashboard** provides comprehensive visualization of:
 
 **Node-Level Forecasts:**
+
 - Node Hourly Cost Forecast
-- Node CPU Cores Forecast  
+- Node CPU Cores Forecast
 - Node CPU Utilisation Forecast
 - Node Memory Utilisation Forecast
 
 **Cluster-Level Forecasts:**
+
 - Cluster Hourly Cost Forecast
 - Cluster CPU Utilisation Forecast
 - Cluster Memory Utilisation Forecast
@@ -150,7 +160,7 @@ spec:
 ## Upgrading
 
 ```bash
-helm upgrade finops-agent ./helm
+helm upgrade finops-agent .
 ```
 
 ## Uninstalling
@@ -162,16 +172,19 @@ helm uninstall finops-agent
 ## Troubleshooting
 
 ### Check pod status
+
 ```bash
 kubectl get pods -l app.kubernetes.io/name=finops-agent
 ```
 
 ### View logs
+
 ```bash
 kubectl logs -f deployment/finops-agent
 ```
 
 ### Check configuration
+
 ```bash
 kubectl get configmap finops-agent-config -o yaml
 ```

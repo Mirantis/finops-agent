@@ -51,6 +51,5 @@ data:
 
     # Metrics configuration
     metrics:
-      port: {{ .Values.config.metrics.port }}
-      host: {{ .Values.config.metrics.host | quote }}
-      path: {{ .Values.config.metrics.path }}
+      forecast_api_port: {{ .Values.config.metrics.forecast_api_port }}
+      forecast_api_host: {{ .Values.config.metrics.forecast_api_host | quote }}

@@ -9,6 +9,6 @@ spec:
       sveltos-agent: present
   serviceSpec:
     services:
-      - template: finops-agent-0-1-0
+      - template: finops-agent-0-1-1
         name: finops-agent
         namespace: finops

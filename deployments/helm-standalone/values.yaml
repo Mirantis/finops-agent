@@ -91,8 +91,8 @@ config:
 
   # Metrics configuration
   metrics:
-    port: 8081
-    host: "0.0.0.0"
+    forecast_api_port: 8081
+    forecast_api_host: "0.0.0.0"
 
 # Grafana dashboard configuration
 grafana:

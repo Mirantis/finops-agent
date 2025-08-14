@@ -15,16 +15,16 @@ data:
         access: proxy
         uid: finops-infinity
         isDefault: true
-        url: "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.port }}"
+        url: "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.forecast_api_port }}"
         jsonData:
           # Authentication and security settings
           timeoutInSeconds: 60
           tlsSkipVerify: true
           allowedHosts:
-            - "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.port }}"
+            - "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.forecast_api_port }}"
           allowDangerousHTTPMethods: false
           # Alternative base URL configurations for different Infinity versions
-          baseUrl: "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.port }}"
-          url: "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.port }}"
+          baseUrl: "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.forecast_api_port }}"
+          url: "http://{{ include "finops-agent.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.metrics.forecast_api_port }}"
         secureJsonData: {}
 {{- end }}

@@ -8,13 +8,13 @@ KOF‑enabled (k0rdent‑managed) cluster.
 | CRD                | File                                | Purpose |
 |--------------------|-------------------------------------|---------|
 | `HelmRepository`   | `helm-repo.yaml`                    | Registers an OCI Helm repo that hosts your FinOps Agent chart. |
-| `ServiceTemplate`  | `service-template.yaml`             | Points to that chart (`finops-agent-kof v0.1.0`). |
+| `ServiceTemplate`  | `service-template.yaml`             | Points to that chart (`finops-agent-kof v0.1.1`). |
 | `MultiClusterService` | `beach-head-mcs.yaml`            | Selects target clusters (by label) and deploys the ServiceTemplate into **`kcm-system`** on each. |
 
 **Flow**
 
-1. Flux pulls the chart from your OCI registry.  
-2. k0rdent's `MultiClusterService`, matches clusters, and installs FinOps Agent referenced via `ServiceTemplate`.  
+1. Flux pulls the chart from your OCI registry.
+2. k0rdent's `MultiClusterService`, matches clusters, and installs FinOps Agent referenced via `ServiceTemplate`.
 3. Grafana (shipped in KOF) discovers the datasource + dashboards bundled in the chart.
 
 ## Quick Start
@@ -23,11 +23,14 @@ KOF‑enabled (k0rdent‑managed) cluster.
 # 1. Add the Helm repo so Flux can fetch your chart
 kubectl apply -f helm-repo.yaml
 ```
+
 ```bash
 # 2. Register the ServiceTemplate
 kubectl apply -f service-template.yaml
 ```
-**Wait for the finops-agent-0-1-0 servicetemplate to become `VALID: true`**
+
+**Wait for the finops-agent-0-1-1 ServiceTemplate to become `VALID: true`**
+
 ```bash
 kubectl get servicetemplate -n kcm-system
 ```
@@ -48,7 +51,7 @@ will immediately receive FinOps Agent in namespace `kcm-system`.
 
 ## Swap In Your Own Chart
 
-1. Push your chart to any OCI registry, e.g.  
+1. Push your chart to any OCI registry, e.g.
    `ghcr.io/<org>/charts/finops-agent:1.2.3`.
 2. Edit **`helm-repo.yaml`** – change `.spec.url` to your registry.
 3. Edit **`service-template.yaml`** – update `.spec.helm.chartSpec.chart`

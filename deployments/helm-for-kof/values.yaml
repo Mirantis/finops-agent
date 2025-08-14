@@ -56,7 +56,7 @@ config:
   collector:
     type: prometheus
     url: http://kof-mothership-promxy.kof.svc.cluster.local:8082
-    lookback_days: 7
+    lookback_days: 14
     step: "1h"  # Consistent step size for all queries
     disable_ssl: true
     timeout: 300
@@ -66,7 +66,7 @@ config:
   # Model configuration
   models:
     type: toto
-    forecast_horizon: 3 # number of days ahead in future
+    forecast_horizon: 7 # number of days ahead in future
     quantiles: [0.1, 0.5, 0.9]
     toto:
       checkpoint: Datadog/Toto-Open-Base-1.0
@@ -109,4 +109,5 @@ grafana:
   dashboardLabels:                     # Labels for GrafanaDashboard CRD
     app: grafana
   dashboardFolder: "General"   # kof-grafana-dashboard default folder
-
+  # Note: Grafana Infinity plugin v3.4.1 must be manually installed
+  # in the KOF Grafana instance for dashboards to work properly
