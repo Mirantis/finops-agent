@@ -107,7 +107,7 @@ kubectl port-forward service/finops-agent-grafana 3001:3001
 
 - **URL**: http://localhost:3001
 - **Username**: `admin`
-- **Password**: `finops123`
+- **Password**: `changeme` (or set `GRAFANA_ADMIN_PASSWORD` in values.yaml)
 
 ### Dashboard Overview
 

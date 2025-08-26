@@ -10,8 +10,6 @@ sources:
 maintainers:
   - name: Mirantis OSPO
     email: ospo@mirantis.com
-  - name: Satyam Bhardwaj
-    email: stmbhardwaj@gmail.com
 keywords:
   - finops
   - forecasting

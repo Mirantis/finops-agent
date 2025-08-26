@@ -12,8 +12,6 @@ The FinOps Agent is an AI-powered forecasting tool with deterministic optimizati
 
 4. Plug & Play – Configure in deployments/helm-standalone/values.yaml, Helm does the rest; integrate via simple JSON APIs.
 
-> In development
-> The default value of Helm chart also includes a public image of finops-agent in ghcr and so optionally you can skip docker build & push.
 
 ## Architecture
 
@@ -63,7 +61,7 @@ finops-agent/
 
 ### TOTO Model Integration
 
-The `toto/` folder contains utility code directly from upstream [Datadog/Toto](https://github.com/Datadog/TOTO) repository. This provides the necessary utilities and helper functions to leverage the TOTO zero-shot forecasting model, including tensor operations, data preprocessing, and model inference capabilities.
+The `toto/` folder contains utility code directly from upstream [Toto](https://github.com/Datadog/TOTO) repository. This provides the necessary utilities and helper functions to leverage the TOTO zero-shot forecasting model, including tensor operations, data preprocessing, and model inference capabilities.
 
 ## Quick Start
 
@@ -96,6 +94,8 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 ```
 
 ### K0rdent + KOF (Recommended)
+
+> Note: Make sure that Grafana instance deployed with KOF has infinity plugin installed else install it manually. This is required for the Forecasting dashboard to work.
 
 Deploy via k0rdent-native resources i.e., HelmRepository, ServiceTemplate, MultiClusterService.
 

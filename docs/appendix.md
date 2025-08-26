@@ -338,36 +338,3 @@ forecast = model.predict(future_df)
 1. **Vendor Evaluation**: Consider commercial forecasting APIs (AWS Forecast, Azure Time Series Insights)
 2. **Model Alternatives**: Evaluate other zero-shot models (TimeGPT, Chronos)
 3. **Custom Implementation**: Develop domain-specific application like for Toto
-
-##### Note
-Time Series Forecasting vs LLM Integration
-1. Data Format Complexity
-Time Series Models:
- 
- - Multiple incompatible formats required (DataFrames, tensors, specific schemas)
- - Temporal dependencies - data must be chronologically ordered
- - Strict validation - missing timestamps break models
- - Numerical precision matters for accuracy
-
-LLM Models:
-
- - Unified text input - everything converts to strings/tokens
- - Flexible format - can handle various text structures
- - Error-tolerant - minor formatting issues don't break inference
- - Context-aware - can understand and adapt to different input styles
-
-
-## 8. Conclusion
-
-The forecasting agent project successfully demonstrates the feasibility of multi-model time series forecasting for FinOps applications. However, the journey from research prototype to production system reveals significant challenges in model integration, data format compatibility.
-
-The key insight is that while individual forecasting models may be sophisticated, the engineering challenges of integrating them into a production system often dominate the complexity. Success requires careful attention to:
-
-- **Data Engineering**: Robust pipelines for data quality and format conversion
-- **Model Operations**: Monitoring, validation, and fallback mechanisms
-- **Infrastructure**: Understanding limitations of existing systems (Prometheus, etc.)
-- **Domain Expertise**: Business-specific tuning and validation
-
-The current implementation provides a solid foundation for further development, with clear paths for enhancement and production readiness. The modular architecture allows for incremental improvements while maintaining system stability.
-
-Future work should focus on automated model selection, enhanced monitoring capabilities, and deeper integration with business processes to realize the full potential of AI-driven FinOps forecasting.

@@ -113,8 +113,8 @@ grafana:
       http_port: 3000
     security:
       admin_user: admin
-      admin_password: finops123  # CAUTION
-    
+      admin_password: ${GRAFANA_ADMIN_PASSWORD:-changeme} # CAUTION
+
   # Dashboard configuration
   dashboard:
     # Variables for the dashboard
