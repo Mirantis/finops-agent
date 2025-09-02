@@ -10,4 +10,4 @@ spec:
   interval: 10m0s
   provider: generic
   type: oci
-  url: oci://ghcr.io/ramessesii2/charts
+  url: oci://ghcr.io/mirantis/charts

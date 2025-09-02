@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/ramessesii2/finops-agent
+  repository: ghcr.io/mirantis/finops-agent
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
@@ -34,12 +34,6 @@ service:
   name: metrics
 
 resources: {}
-  # limits:
-  #   cpu: 500m
-  #   memory: 512Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 256Mi
 
 nodeSelector: {}
 

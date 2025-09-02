@@ -176,3 +176,5 @@ Thumbs.db
 .idea/
 
 coding-conventions.md
+charts/
+version.txt

@@ -34,12 +34,6 @@ service:
   name: metrics
 
 resources: {}
-  # limits:
-  #   cpu: 500m
-  #   memory: 512Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 256Mi
 
 nodeSelector: {}
 
@@ -52,12 +46,11 @@ config:
   # Agent configuration
   agent:
     interval: 3600  # seconds between forecast updates
-  
   # Collector configuration
   collector:
     type: prometheus
     url: http://kof-mothership-promxy.kof.svc.cluster.local:8082
-    lookback_days: 18 
+    lookback_days: 14
     step: "1h"  # Consistent step size for all queries
     disable_ssl: true
     timeout: 300
@@ -71,15 +64,15 @@ config:
     quantiles: [0.1, 0.5, 0.9]
     toto:
       checkpoint: Datadog/Toto-Open-Base-1.0
-      device: cpu              # or cuda
+      device: cuda              # or cpu
       context_length: 4096
       num_samples: 256
       compile: true
 
   # Optimizer configuration
   optimizer:
-    idle_cpu_threshold: 0.5
-    idle_mem_threshold: 0.5
+    idle_cpu_threshold: 0.3
+    idle_mem_threshold: 0.3
     min_node_savings: 1
 
   # Validation configuration
@@ -93,6 +86,13 @@ config:
   metrics:
     forecast_api_port: 8081
     forecast_api_host: "0.0.0.0"
+
+  # Node normalization configuration
+  node_normalization:
+    enabled: True
+    kube_node_info_query: "kube_node_info"  # Query to get node mappings
+    fallback_to_original: True  # Return original name if no mapping found
+    log_mapping_stats: True  # Log mapping statistics for debugging
 
 # Grafana dashboard configuration
 grafana:

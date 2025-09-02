@@ -33,9 +33,10 @@ kubectl get servicetemplate -n kcm-system
 The FinOps Agent dashboards require the **Grafana Infinity plugin v3.4.1** to function properly. Since k0rdent/KOF manages Grafana via its own configuration, you'll need to manually install this plugin in your KOF Grafana instance.
 
 To install the plugin in KOF Grafana:
+
 1. Access your KOF Grafana instance
 2. Go to Administration → Plugins
-3. Search for "Infinity" 
+3. Search for "Infinity"
 4. Install yesoreyeram-infinity-datasource v3.4.1
 
 Apply the k0rdent resources (HelmRepository, ServiceTemplate, MultiClusterService) here: [k0rdent-service-template](../k0rdent-service-template/README.md)
@@ -47,6 +48,7 @@ Apply the k0rdent resources (HelmRepository, ServiceTemplate, MultiClusterServic
 Edit `deployments/helm-for-kof/values.yaml` to override defaults (image, Prometheus URL, model settings, Grafana dashboard labels, etc.).
 
 If you pushed to your own registry, update:
+
 - `deployments/k0rdent-service-template/helm-repo.yaml` → `.spec.url`
 - `deployments/k0rdent-service-template/service-template.yaml` → `.spec.helm.chartSpec.chart` and `version`
 

@@ -1,12 +1,12 @@
 apiVersion: v2
 name: finops-agent
-description: A Helm chart for FinOps Agent - Financial Operations Forecasting Agent
+description: Helm chart for FinOps Agent for standalone use
 type: application
-version: 0.1.1
-appVersion: "0.1.1"
-home: https://github.com/ramessesii2/finops-agent
+version: 0.1.2
+appVersion: "0.1.2"
+home: https://github.com/mirantis/finops-agent
 sources:
-  - https://github.com/ramessesii2/finops-agent
+  - https://github.com/mirantis/finops-agent
 maintainers:
   - name: Mirantis OSPO
     email: ospo@mirantis.com
@@ -17,5 +17,8 @@ keywords:
   - cost-optimization
   - prometheus
   - toto
+  - OpenCost
+  - k0rdent
+  - KOF
 annotations:
   category: Analytics
