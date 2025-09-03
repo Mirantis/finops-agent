@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -26,6 +26,10 @@ jobs:
       uses: azure/setup-helm@v4
       with:
         version: v3.14.0
+
+    - name: Set lowercased owner
+      shell: bash
+      run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER@L}" >> "$GITHUB_ENV"
 
     - name: Determine version
       id: version
@@ -46,25 +50,25 @@ jobs:
       run: |
         VERSION=${{ steps.version.outputs.version }}
         echo "Updating charts to version: $VERSION"
-        
+
         # Update helm-standalone chart
         sed -i "s/version: .*/version: $VERSION/" deployments/helm-standalone/Chart.yaml
         sed -i "s/appVersion: .*/appVersion: \"$VERSION\"/" deployments/helm-standalone/Chart.yaml
-        
-        # Update helm-for-kof chart  
+
+        # Update helm-for-kof chart
         sed -i "s/version: .*/version: $VERSION/" deployments/helm-for-kof/Chart.yaml
         sed -i "s/appVersion: .*/appVersion: \"$VERSION\"/" deployments/helm-for-kof/Chart.yaml
 
     - name: Package Helm Charts
       run: |
         mkdir -p charts
-        
+
         # Package helm-standalone
         helm package deployments/helm-standalone -d charts
-        
+
         # Package helm-for-kof
         helm package deployments/helm-for-kof -d charts
-        
+
         ls -la charts/
 
     - name: Login to GitHub Container Registry
@@ -77,12 +81,12 @@ jobs:
     - name: Push Charts to GHCR
       run: |
         VERSION=${{ steps.version.outputs.version }}
-        
+
         # Push helm-standalone chart
-        helm push charts/finops-agent-$VERSION.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
-        
+        helm push charts/finops-agent-$VERSION.tgz oci://ghcr.io/${{ env.OWNER_LC }}/charts
+
         # Push helm-for-kof chart
-        helm push charts/finops-agent-kof-$VERSION.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+        helm push charts/finops-agent-kof-$VERSION.tgz oci://ghcr.io/${{ env.OWNER_LC }}/charts
 
     - name: Install ORAS
       uses: oras-project/setup-oras@v1
@@ -90,8 +94,8 @@ jobs:
     - name: Tag charts as latest
       if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       run: |
-        oras tag ghcr.io/${{ github.repository_owner }}/charts/finops-agent:${{ steps.version.outputs.version }} latest
-        oras tag ghcr.io/${{ github.repository_owner }}/charts/finops-agent-kof:${{ steps.version.outputs.version }} latest
+        oras tag ghcr.io/${{ env.OWNER_LC }}/charts/finops-agent:${{ steps.version.outputs.version }} latest
+        oras tag ghcr.io/${{ env.OWNER_LC }}/charts/finops-agent-kof:${{ steps.version.outputs.version }} latest
 
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/')

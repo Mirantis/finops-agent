@@ -27,15 +27,19 @@ jobs:
     - name: Log in to Container Registry
       uses: docker/login-action@v3
       with:
-        registry: ${{ env.REGISTRY }}
+        registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set lowercased image name
+      shell: bash
+      run: echo "IMAGE_NAME_LC=${GITHUB_REPOSITORY@L}" >> "$GITHUB_ENV"
 
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}
         tags: |
           type=ref,event=branch
           type=semver,pattern={{version}}
